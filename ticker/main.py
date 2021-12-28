@@ -31,9 +31,9 @@ SYMBOLS = [
 
 # ENVIRONMENTAL VARIABLES
 SCHEMA = os.environ.get("SCHEMA")
-EXCHANGE = os.environ.get("EXCHANGE")
-HOST = os.environ.get("HOST")
-PORT = os.environ.get("PORT")
+EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
+HOST = os.environ.get("RABBITMQ_HOST")
+PORT = os.environ.get("RABBITMQ_PORT")
 
 
 class IPublisher(abc.ABC):       
@@ -49,18 +49,18 @@ class RabbitmqPublisher(IPublisher):
         self.config = config
 
     def publish(self, routing_key, message):       
-       connection = self._create_connection()
+        connection = self._create_connection()
+        print(config)
+        # Create a new channel with the next available channel number or pass in a channel number to use
+        channel = connection.channel()
 
-       # Create a new channel with the next available channel number or pass in a channel number to use
-       channel = connection.channel()
-
-       # Creates an exchange if it does not already exist, and if the exchange exists,
-       # verifies that it is of the correct and expected class. 
-       channel.exchange_declare(exchange=self.config['exchange'], exchange_type='topic')
-       
-       #Publishes message to the exchange with the given routing key
-       channel.basic_publish(exchange=self.config['exchange'], routing_key=routing_key, body=message)
-       print(f"[x] Sent message {message} for {routing_key}")
+        # Creates an exchange if it does not already exist, and if the exchange exists,
+        # verifies that it is of the correct and expected class. 
+        channel.exchange_declare(exchange=self.config['exchange'], exchange_type='topic')
+        
+        #Publishes message to the exchange with the given routing key
+        channel.basic_publish(exchange=self.config['exchange'], routing_key=routing_key, body=message)
+        print(f"[x] Sent message {message} for {routing_key}")
 
     # Create new connection
     def _create_connection(self):
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     endpoint = "wss://stream.binance.com:9443/ws"
 
     stream1 = 'ticker'
-    interval = "1m"
+    interval = "5s"
     stream2 = f"kline_{interval}"
     config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
     publisher = RabbitmqPublisher(config=config)
