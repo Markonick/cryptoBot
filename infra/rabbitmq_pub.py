@@ -31,5 +31,9 @@ class RabbitmqPublisher(IPublisher):
 
     # Create new connection
     def _create_connection(self):
+        print(self.config['host'])
+        print(self.config['host'])
+        print(self.config['host'])
+        print(self.config['host'])
         param = pika.ConnectionParameters(host=self.config['host'], port=self.config['port']) 
         return pika.BlockingConnection(param)

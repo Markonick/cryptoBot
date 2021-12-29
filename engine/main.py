@@ -8,30 +8,25 @@ import sys
 
 # CONSTANTS
 CURRENCY = 'usdt'
-# SYMBOLS = [
-#   "btc"  , "xrp"  , "doge" , "xlm"  , "trx"  , 
-#   "eos"  , "ltc"  , "iota", "xmr"  , "link" , 
-#   "etn"  , "rdd"  , "strax", "npxs" , "glm"  ,
-#   "aave" , "sol"  , "atom" , "cro"  , "ht"   ,
-#   "mkr"  , "snx"  , "algo" , "ksm"  , "comp" ,
-#   "vgx"  , "ftm"  , "zec"  , "rune" , "cel"  ,
-#   "rev"  , "icx"  , "hbar" , "chsb" , "iost" ,
-#   "zks"  , "lrc"  , "omg"  , "pax"  , "husd" ,
-#   "vet"  , "sc"   , "btt"  , "dash" , "xtz"  ,
-#   "bch"  , "bnb"  , "ada"  , "usdt" , "dcn"  ,
-#   "tfuel", "xvg"  , "rvn"  , "bat"  , "dot"  ,
-#   "theta", "luna" , "neo"  , "ftt"  , "dai"  ,
-#   "egld" , "fil"  , "leo"  , "sushi", "dcr"  ,
-#   "ren"  , "nexo" , "zrx"  , "okb"  , "waves",
-#   "dgb"  , "ont"  , "bnt"  , "nano" , "matic",
-#   "xwc"  , "zen"  , "btmx" , "qtum" , "hnt"  ,
-#   "KNDC" , "delta", "pib"  , "opt"  , "acdc", 
-#   "eth",
-# ]
 SYMBOLS = [
   "btc"  , "xrp"  , "doge" , "xlm"  , "trx"  , 
-  "eos"  , "ltc"  , "iota", "eth"  , "link" , 
-  "ada"  , "rdd"  , "btt", "rvn" , "vet"  , "xvg",
+  "eos"  , "ltc"  , "iota", "xmr"  , "link" , 
+  "etn"  , "rdd"  , "strax", "npxs" , "glm"  ,
+  "aave" , "sol"  , "atom" , "cro"  , "ht"   ,
+  "mkr"  , "snx"  , "algo" , "ksm"  , "comp" ,
+  "vgx"  , "ftm"  , "zec"  , "rune" , "cel"  ,
+  "rev"  , "icx"  , "hbar" , "chsb" , "iost" ,
+  "zks"  , "lrc"  , "omg"  , "pax"  , "husd" ,
+  "vet"  , "sc"   , "btt"  , "dash" , "xtz"  ,
+  "bch"  , "bnb"  , "ada"  , "usdt" , "dcn"  ,
+  "tfuel", "xvg"  , "rvn"  , "bat"  , "dot"  ,
+  "theta", "luna" , "neo"  , "ftt"  , "dai"  ,
+  "egld" , "fil"  , "leo"  , "sushi", "dcr"  ,
+  "ren"  , "nexo" , "zrx"  , "okb"  , "waves",
+  "dgb"  , "ont"  , "bnt"  , "nano" , "matic",
+  "xwc"  , "zen"  , "btmx" , "qtum" , "hnt"  ,
+  "KNDC" , "delta", "pib"  , "opt"  , "acdc", 
+  "eth",
 ]
 
 
@@ -150,7 +145,7 @@ if __name__ == '__main__':
     endpoint = "wss://stream.binance.com:9443/ws"
 
     stream1 = 'ticker'
-    interval = "10s"
+    interval = "1s"
     stream2 = f"kline_{interval}"
     config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
     print(config)
