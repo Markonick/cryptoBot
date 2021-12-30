@@ -3,32 +3,8 @@ from typing import Any, Optional
 import json, os, asyncio, websockets
 import abc
 import pika
-import sys
-# from infra.rabbitmq_pub import IPublisher, RabbitmqPublisher
 
-# CONSTANTS
-CURRENCY = 'usdt'
-SYMBOLS = [
-  "btc"  , "xrp"  , "doge" , "xlm"  , "trx"  , 
-  "eos"  , "ltc"  , "iota", "xmr"  , "link" , 
-  "etn"  , "rdd"  , "strax", "npxs" , "glm"  ,
-  "aave" , "sol"  , "atom" , "cro"  , "ht"   ,
-  "mkr"  , "snx"  , "algo" , "ksm"  , "comp" ,
-  "vgx"  , "ftm"  , "zec"  , "rune" , "cel"  ,
-  "rev"  , "icx"  , "hbar" , "chsb" , "iost" ,
-  "zks"  , "lrc"  , "omg"  , "pax"  , "husd" ,
-  "vet"  , "sc"   , "btt"  , "dash" , "xtz"  ,
-  "bch"  , "bnb"  , "ada"  , "usdt" , "dcn"  ,
-  "tfuel", "xvg"  , "rvn"  , "bat"  , "dot"  ,
-  "theta", "luna" , "neo"  , "ftt"  , "dai"  ,
-  "egld" , "fil"  , "leo"  , "sushi", "dcr"  ,
-  "ren"  , "nexo" , "zrx"  , "okb"  , "waves",
-  "dgb"  , "ont"  , "bnt"  , "nano" , "matic",
-  "xwc"  , "zen"  , "btmx" , "qtum" , "hnt"  ,
-  "KNDC" , "delta", "pib"  , "opt"  , "acdc", 
-  "eth",
-]
-
+from binance.client import Client
 
 class IPublisher(abc.ABC):       
     @abc.abstractmethod 
@@ -40,25 +16,24 @@ class RabbitmqPublisher(IPublisher):
     RabbitMQ implementation of IPublisher 
     """
     def __init__(self, config):
-        self.config = config
+        self._config = config   
+        self._connection = self._create_connection()
 
-    def publish(self, routing_key, message):       
-        connection = self._create_connection()
-        print(config)
+    def publish(self, routing_key, message):    
         # Create a new channel with the next available channel number or pass in a channel number to use
-        channel = connection.channel()
+        channel = self._connection.channel()
 
         # Creates an exchange if it does not already exist, and if the exchange exists,
         # verifies that it is of the correct and expected class. 
-        channel.exchange_declare(exchange=self.config['exchange'], exchange_type='topic')
+        channel.exchange_declare(exchange=self._config['exchange'], exchange_type='topic')
         
         #Publishes message to the exchange with the given routing key
-        channel.basic_publish(exchange=self.config['exchange'], routing_key=routing_key, body=message)
+        channel.basic_publish(exchange=self._config['exchange'], routing_key=routing_key, body=message)
         print(f"[x] Sent message {message} for {routing_key}")
 
     # Create new connection
     def _create_connection(self):
-        param = pika.ConnectionParameters(host=self.config['host'], port=self.config['port'], heartbeat=600,
+        param = pika.ConnectionParameters(host=self._config['host'], port=self._config['port'], heartbeat=600,
                                        blocked_connection_timeout=300) 
         return pika.BlockingConnection(param)
 
@@ -141,18 +116,28 @@ if __name__ == '__main__':
     HOST = os.environ.get("RABBITMQ_HOST")
     PORT = os.environ.get("RABBITMQ_PORT")
 
-    exchange = "binance"
-    endpoint = "wss://stream.binance.com:9443/ws"
+    BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
+    BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
-    stream1 = 'ticker'
-    interval = "1s"
-    stream2 = f"kline_{interval}"
-    config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
-    print(config)
-    publisher = RabbitmqPublisher(config=config)
-    ticker = Ticker(publisher)
-    stream1 = CryptoStream(ticker, endpoint, exchange, stream1)
-    # instrument2 = CryptoStream(producer, endpoint, exchange, stream2)
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(stream1.gather_instrument_coros())
-    # loop.run_until_complete(instrument2.gather_instrument_coros())
+    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
+    print(client.get_order_book(symbol='BNBBTC'))
+    
+    order = client.create_test_order(
+        symbol='BNBBTC',
+        side=Client.SIDE_BUY,
+        type=Client.ORDER_TYPE_MARKET,
+        quantity=100)
+    # exchange = "binance"
+    # endpoint = "wss://stream.binance.com:9443/ws"
+
+    # stream1 = 'ticker'
+    # interval = "1s"
+    # stream2 = f"kline_{interval}"
+    # config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
+    # print(config)
+    # publisher = RabbitmqPublisher(config=config)
+    # ticker = Ticker(publisher)
+    # stream1 = CryptoStream(ticker, endpoint, exchange, stream1)
+    # loop = asyncio.get_event_loop()
+    # loop.run_until_complete(stream1.gather_instrument_coros())
+

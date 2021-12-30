@@ -9,6 +9,4 @@ WORKDIR /ticker
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# CMD ["ls"]
-
 CMD [ "python", "main.py" ]
