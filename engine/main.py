@@ -2,6 +2,8 @@ import typing, time, abc, dataclasses
 from typing import Any, Optional
 import json, os, asyncio, websockets
 import abc
+import pandas as pd
+import mplfinance as mpf
 import pika
 
 from binance.client import Client
@@ -120,13 +122,25 @@ if __name__ == '__main__':
     BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
     client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-    print(client.get_order_book(symbol='BNBBTC'))
-    
-    order = client.create_test_order(
-        symbol='BNBBTC',
-        side=Client.SIDE_BUY,
-        type=Client.ORDER_TYPE_MARKET,
-        quantity=100)
+    print(client.ping())
+    asset="BTCUSDT"
+    start="2021.10.1"
+    end="2021.11.1"
+    timeframe="1d"
+    df=pd.DataFrame(client.get_all_tickers())
+    df=df.set_index("symbol")
+    df["price"]=df["price"].astype("float")
+    df.index=df.index.astype("string")
+    # print(df)
+    print(df.loc["BTCUSDT"])
+    df= pd.DataFrame(client.get_historical_klines(asset, timeframe,start,end))
+    df=df.iloc[:,:6]
+    df.columns=["Date","Open","High","Low","Close","Volume"]
+    df=df.set_index("Date")
+    df.index=pd.to_datetime(df.index,unit="ms")
+    df=df.astype("float")
+
+    mpf.plot(df, type='candle', volume=True, mav=7)
     # exchange = "binance"
     # endpoint = "wss://stream.binance.com:9443/ws"
 
