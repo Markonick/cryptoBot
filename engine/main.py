@@ -3,10 +3,11 @@ from typing import Any, Optional
 import json, os, asyncio, websockets
 import abc
 import pandas as pd
+import btalib
 import mplfinance as mpf
 import pika
 
-from binance.client import Client
+from binance.client import Client, AsyncClient
 
 class IPublisher(abc.ABC):       
     @abc.abstractmethod 
@@ -109,9 +110,7 @@ class Ticker(ITicker):
             time.sleep(1)
             print(ex)
 
-
-# MAIN ENTRYPOINT
-if __name__ == '__main__':
+async def main():
     # ENVIRONMENTAL VARIABLES
     SCHEMA = os.environ.get("SCHEMA")
     EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
@@ -121,26 +120,43 @@ if __name__ == '__main__':
     BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
     BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
-    client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)
-    print(client.ping())
+    # client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)#
+    client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+    print(await client.ping())
     asset="BTCUSDT"
     start="2021.10.1"
-    end="2021.11.1"
+    end="2021.12.1"
     timeframe="1d"
-    df=pd.DataFrame(client.get_all_tickers())
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
+    df=pd.DataFrame(await client.get_all_tickers())
     df=df.set_index("symbol")
     df["price"]=df["price"].astype("float")
     df.index=df.index.astype("string")
     # print(df)
     print(df.loc["BTCUSDT"])
-    df= pd.DataFrame(client.get_historical_klines(asset, timeframe,start,end))
+    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_30MINUTE, "1 Sept, 2021", "29 Dec, 2021"))
     df=df.iloc[:,:6]
     df.columns=["Date","Open","High","Low","Close","Volume"]
     df=df.set_index("Date")
     df.index=pd.to_datetime(df.index,unit="ms")
     df=df.astype("float")
+    
+    sma = btalib.sma(df, period=15)
+    df['sma5'] = btalib.sma(df['Close'], period=5).df
+    df['sma20'] = btalib.sma(df['Close'], period=20).df
+    df['sma50'] = btalib.sma(df['Close'], period=50).df
+    df['rsi14'] = btalib.rsi(df['Close'], period=14).df
+    macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
+  
+    df = df.join(macd.df)
 
-    mpf.plot(df, type='candle', volume=True, mav=7)
+    # sma = btalib.sma(df['Close'])
+    print(df.tail(5))
+    await client.close_connection()
+# MAIN ENTRYPOINT
+if __name__ == '__main__':
+
+    # mpf.plot(df, type='candle', volume=True, mav=7)
     # exchange = "binance"
     # endpoint = "wss://stream.binance.com:9443/ws"
 
@@ -155,3 +171,6 @@ if __name__ == '__main__':
     # loop = asyncio.get_event_loop()
     # loop.run_until_complete(stream1.gather_instrument_coros())
 
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
