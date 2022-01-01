@@ -8,13 +8,8 @@ import HelpIcon from '@mui/icons-material/Help';
 import CssBaseline from '@mui/material/CssBaseline';
 import { ROUTES_CONFIG } from '../routes';
 import { Logo } from "./Logo";
-import { siteState } from '../store/siteState';
-import { tokenState } from '../store/tokenState';
-import { summaryState } from '../store/summaryState';
-import { AuthenticatedTemplate, useMsal, useAccount} from "@azure/msal-react";
 import { AccountMenu } from './AccountMenu';
 import { Theme } from '@mui/material';
-import { apiRequest } from '../pages/auth/authConfig';
 
 const colorArray = {
   "dark": ["crimson", "pink", "springgreen", "orange",],
@@ -80,41 +75,10 @@ const useStyles =  makeStyles((theme: Theme) =>
 export const Header: React.FC = (props) => {
   const classes = useStyles();
   const theme = useTheme() as Theme;
-  const site = useRecoilValue(siteState);
-  const summary = useRecoilValue(summaryState);
-  const setToken = useSetRecoilState<string>(tokenState);
-
-	const { accounts, instance } = useMsal();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  const account = useAccount(accounts[0] || {});
-
-  useEffect(() => {
-    if (account) {
-      instance.acquireTokenSilent({
-          scopes: apiRequest.scopes,
-          account: account
-      }).then((response) => {
-          if(response) {
-            setToken(response.accessToken)
-          }
-      });
-    }
-  }, [account, instance, setToken]);
-
-  const isSiteSelected = Object.keys(site).length > 0;
-  const isSummarySelected = Object.keys(summary).length > 0;
-
-  const conditionalSummaryLink = isSiteSelected 
-    ? <Link to={{pathname: ROUTES_CONFIG.SUMMARY, state: site}} className={classes.link}>SUMMARY</Link>
-    : "";
-
-  const conditionalStudiesLink = isSummarySelected
-    ? <Link to={{pathname: ROUTES_CONFIG.ALL_STUDIES_LIST, state: {site_id: site.id}}} className={classes.link}>ALL STUDIES</Link>
-    : "";
-
   return (
     <React.Fragment >
       <CssBaseline />
@@ -123,14 +87,10 @@ export const Header: React.FC = (props) => {
           backgroundColor: theme.palette.primary.header, 
           }}>
           <Toolbar className={classes.navbar}>
-            <AuthenticatedTemplate>
-              <Link to={ROUTES_CONFIG.ROOT} className={classes.logo}><Logo/></Link>
-              <Link to={ROUTES_CONFIG.ROOT} className={classes.link}>SITES</Link>
-              {conditionalSummaryLink}
-              {conditionalStudiesLink}
-              <Link to={ROUTES_CONFIG.ABOUT} className={classes.link}><HelpIcon fontSize='small' style={{ display: "flex", marginRight: 5, marginTop: -5}} />ABOUT</Link>    
-              <AccountMenu account={accounts[0]} color={getRandomColor(theme.palette.mode)}/>
-            </AuthenticatedTemplate>
+            <Link to={ROUTES_CONFIG.ROOT} className={classes.logo}><Logo /></Link>
+            <Link to={ROUTES_CONFIG.SYMBOLS} className={classes.link}>SYMBOLS</Link>
+            <Link to={ROUTES_CONFIG.PORTFOLIO} className={classes.link}>PORTFOLIO</Link>
+            <Link to={ROUTES_CONFIG.ABOUT} className={classes.link}><HelpIcon fontSize='small' style={{ display: "flex", marginRight: 5, marginTop: -5}} />ABOUT</Link>    
           </Toolbar>
         </AppBar>
       {/* </HideOnScroll> */}

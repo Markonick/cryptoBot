@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
 import Menu from '@mui/material/Menu';
@@ -48,7 +48,7 @@ interface AccountProps {
 
 export const AccountMenu: React.FC<AccountProps> = (props:AccountProps) => {
   const classes = useStyles();
-  const history = useHistory();
+  let navigate = useNavigate();
   const theme = useTheme() as Theme;
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -63,7 +63,7 @@ export const AccountMenu: React.FC<AccountProps> = (props:AccountProps) => {
   };
 	
 	const handleMenuItemClick = (route:string) => {
-    history.push(route, {account: props.account});
+    navigate(route, {state: props.account});
 	};
 
   return (
@@ -124,12 +124,6 @@ export const AccountMenu: React.FC<AccountProps> = (props:AccountProps) => {
           </ListItemIcon>
 					<div className={classes.link} style={{color: theme.palette.primary.text}}>Settings</div>
         {/* <ThemeSwitch/> */}
-        </MenuItem>
-        <MenuItem onClick={() => handleMenuItemClick(ROUTES_CONFIG.AUTH_LOGIN)}>
-          <ListItemIcon>
-            <Logout fontSize="medium" />
-          </ListItemIcon>
-					<div className={classes.link} style={{color: theme.palette.primary.text}}>Logout</div>
         </MenuItem>
       </Menu>
     </React.Fragment>

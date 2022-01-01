@@ -6,10 +6,6 @@ import { styled } from '@mui/material/styles';
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import ce from '../../assets/images/ce.svg';
-import consult from '../../assets/images/instruction.svg';
-import manufactureDate from '../../assets/images/date.svg';
-import manufacturer from '../../assets/images/manufacturer.svg';
 import { IAbout } from '../../customTypes';
 import { Logo } from '../../components/Logo';
 
@@ -25,28 +21,10 @@ const StyledCard = styled(Card)({
   boxShadow: "none",
 });
 
-const StyledCardContent = styled(CardContent)({
-  width: '80%',
-  display: "flex",
-  flexWrap: "wrap",
-  flexDirection: "row",
-  justifyContent: "center",
-  // backgroundColor: 'red',
-});
-
-const StyledTypography = styled(Typography)({
-  display: "flex",
-  flexWrap: "wrap",
-  fontWeight: 100,
-  fontFamily: "Helvetica",
-  color: 'black',
-  fontSize: 14,
-  width: '100%',
-});
 const useStyles = makeStyles(({
   root: {
     marginTop: "20px",
-    // color: "black",
+    color: "black",
     boxShadow: 'none',
     // textDecoration: "none !important",
   },
@@ -82,7 +60,6 @@ const useStyles = makeStyles(({
   },
 }));
 
-
 interface Props {
   about: IAbout,
 };
@@ -91,74 +68,18 @@ export const AboutCard: React.FC<Props> = (props: Props) => {
   const classes = useStyles();
   const theme = useTheme() as Theme;
 
-  const versionNumber = props.about.miaIqVersion || 'Version 1.1.0';
-  const miaIqVersionItem = (
-    <div className={classes.item} >
-      <Typography className={classes.img} style={{marginRight: 20, height: 30,}}><Logo width={80}/></Typography>
-      <StyledTypography className={classes.text}>{versionNumber}</StyledTypography>
-    </div>);
-
-  const consultText = {
-    EU: "This is not a  medical device. Not intended to mitigate, treat or diagnose a disease. Consult instruction for use",
-    US: "Consult instruction for use",
-  };
-
-  const consultInfo = (
-    <div className={classes.item}>
-      <img src={consult} className={classes.img} alt="consult" />
-      <StyledTypography className={classes.text}>{consultText.EU}</StyledTypography >
-    </div>);
-
-  const ceMarkNumber = props.about.ceMarkNumber || '197';
-  const ceMark = (
-    <div className={classes.item}>
-      <img src={ce} className={classes.img} alt="cemark" />
-      <StyledTypography className={classes.text}>{ceMarkNumber}</StyledTypography >
-    </div>
-  );
-
-  const manufacturerText = (
-    <div>
-      <div>Kheiron Medical Technologies Ltd</div>
-      <div>Stylus Building, 116 Old Street</div>
-      <div>London EC1V 9BG</div>
-      <div>United Kingdom</div>
-    </div>
-  );
-
-  const manufacturerItem = (
-    <div className={classes.item}>
-      <img src={manufacturer} className={classes.img} alt="manufacturer" />
-      <StyledTypography className={classes.text} style={{ marginTop: 0 }}>{manufacturerText}</StyledTypography >
-    </div>);
-
-  const manufactureDateText = '22 Mar 2021';
-  const manufactureDateItem = (
-    <div className={classes.item}>
-      <img src={manufactureDate} className={classes.img} alt="manufactureDate" />
-      <StyledTypography className={classes.text}>{manufactureDateText}</StyledTypography >
-    </div>);
-
-  const aboutItems = [
-    miaIqVersionItem,
-    consultInfo,
-    ceMark,
-    manufacturerItem,
-    manufactureDateItem,
-  ]
+  const aboutItems = [] as any;
 
   return (
-    <StyledCard className={classes.root} 
+    <div className={classes.root} 
       style={{backgroundColor: theme.palette.primary.about}}>
-      <StyledCardContent>
         <div className={classes.actions}>
           <div style={{
-            textAlign: 'left',
+            textAlign: 'left', color: 'black'
           }}>
             {aboutItems}
           </div>
-        </div>
-      </StyledCardContent>
-    </StyledCard >
+      </div>
+    </div>
   )
 };

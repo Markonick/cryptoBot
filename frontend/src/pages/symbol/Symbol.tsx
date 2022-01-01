@@ -1,15 +1,12 @@
-import React, { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { createStyles, makeStyles } from '@mui/styles';
-import { ISymbol } from "../../customTypes";
+import * as React from 'react';
+import { AboutCard } from '../about/AboutCard';
 
 
-export const Study: React.FC<ISymbol> = () => {
-  const location = useLocation<ISymbol>();
-
-  const symbol = location.state;
-
+export const About: React.FC = () => {
+  const about = { miaIqVersion: 0, ceMarkNumber: 0 }
   return (
-      <div> {symbol}</div>
-  )
+    <>
+      <AboutCard about={about} />
+    </>
+  );
 };

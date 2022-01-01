@@ -1,12 +1,8 @@
-// AppRoutes.tsx
 import React, { Suspense } from 'react';
-import { Route, Switch, withRouter } from 'react-router-dom';
+import { useRoutes } from "react-router-dom";
 import { About } from "./pages/about/About";
-import { Studies } from './pages/symbols/Studies';
-import { Login } from './pages/auth/Login';
-import { Image } from './pages/orders/Orders';
-import { Sites } from './pages/symbol/Symbol';
-import { Summary } from './pages/portfolio/Portfolio';
+import { Portfolio } from './pages/portfolio/Portfolio';
+import { Symbols } from './pages/symbols/Symbols';
 import { AccountSettings } from './components/AccountSettings';
 import { Profile } from './components/Profile';
 
@@ -15,8 +11,8 @@ import { Profile } from './components/Profile';
 export const buildRoute = (route: string): string => `${route}`;
 
 const SYMBOL_ROUTES = {
-  SYMBOLS_LIST: buildRoute('/symbols'),
-  SYMBOL_DETAILS: buildRoute('/symbols/:id'),
+  SYMBOLS: buildRoute('/symbols'),
+  SYMBOL: buildRoute('/symbols/:id'),
 };
 
 export const ROUTES_CONFIG = {
@@ -30,19 +26,23 @@ export const ROUTES_CONFIG = {
 
 // =========================================================================
 
+const routes = [
+  { path: ROUTES_CONFIG.ROOT, element: <Portfolio /> },
+  { path: ROUTES_CONFIG.PORTFOLIO, element: <Portfolio /> },
+  { path: ROUTES_CONFIG.SYMBOLS, element: <Symbols /> },
+  { path: ROUTES_CONFIG.ABOUT, element: <About /> },
+  { path: ROUTES_CONFIG.SETTINGS, element: <AccountSettings /> },
+  { path: ROUTES_CONFIG.PROFILE, element: <Profile /> },
+]
+
 const AppRoutes: React.FC = () => {
+
+  const routeResult = useRoutes(routes);
   return (
     <Suspense fallback='loading'>
-      <Switch>
-        <Route path={ROUTES_CONFIG.ROOT} exact component={Sites}/>
-        <Route path={ROUTES_CONFIG.PORTFOLIO} exact component={Summary}/>
-        <Route path={ROUTES_CONFIG.SYMBOLS_LIST} exact component={Studies}/>
-        <Route path={ROUTES_CONFIG.ABOUT} exact component={About}/>
-        <Route path={ROUTES_CONFIG.SETTINGS} exact component={AccountSettings}/>
-        <Route path={ROUTES_CONFIG.PROFILE} exact component={Profile}/>
-      </Switch>
+      {routeResult}
     </Suspense>
   );
 };
 
-export default withRouter(AppRoutes);
+export default AppRoutes;

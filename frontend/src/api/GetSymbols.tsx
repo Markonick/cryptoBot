@@ -1,28 +1,23 @@
 import { useEffect, useState } from "react";
 import { useRecoilValue } from "recoil";
 import axios from "axios";
-import { ISite } from "../customTypes";
-import { tokenState } from '../store/tokenState';
+import { ISymbol } from "../customTypes";
 
-export const GetSites = () => {
-  const [sites, setSites] = useState<ISite[]>([]);
+export const GetSymbols = () => {
+  const [symbols, setSymbols] = useState<ISymbol[]>([]);
   const baseUrl = process.env.REACT_APP_BASE_URL;
-  const token = useRecoilValue(tokenState);
-  const config = {
-    headers: { "Authorization": `Bearer ${token}`}
-  };
-
+  
   useEffect(() => {
-    const fetchSites = async () => {
-      await axios.get<ISite[]>(`${baseUrl}/sites/1`, config).then(response => {
-        setSites(response?.data);
+    const fetchSymbols = async () => {
+      await axios.get<ISymbol[]>(`${baseUrl}/symbols`).then(response => {
+        setSymbols(response?.data);
       });
     };
-    fetchSites();
+    fetchSymbols();
   }, []);
   
   return (
-    {sites}
+    symbols
   );
 }
     

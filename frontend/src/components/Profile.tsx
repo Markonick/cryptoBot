@@ -1,7 +1,6 @@
 import React from "react";
 import { makeStyles } from "@mui/styles";
 import { useLocation } from 'react-router-dom';
-import { AccountInfo } from "@azure/msal-common";
 
 
 const useStyles = makeStyles(({
