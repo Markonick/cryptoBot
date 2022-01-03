@@ -2,7 +2,7 @@ fastapi
 fastapi-utils
 uvicorn[standard]
 starlette
-aiokafka
 asyncpg
 asyncio
 loguru
+pika

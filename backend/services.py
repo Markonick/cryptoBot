@@ -20,8 +20,9 @@ class TickerService:
         self._window = window
         self._repo = repo
 
-    def get_ticker(self, symbol: str) -> Tick:
-        tick = self._repo.get_ticker_by_window(self._window, symbol)
+    async def get_ticker(self, symbol: str) -> Tick:
+        print('GET TICKER')
+        tick = await self._repo.get_ticker_by_window()
         return tick
         
     def get_is_price_up(self, incomingTick: Tick) -> bool:

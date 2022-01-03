@@ -45,25 +45,24 @@ class RabbitmqPublisher(IPublisher):
     RabbitMQ implementation of IPublisher 
     """
     def __init__(self, config):
-        self.config = config
+        self._config = config
 
     def publish(self, routing_key, message):       
         connection = self._create_connection()
-        print(config)
         # Create a new channel with the next available channel number or pass in a channel number to use
         channel = connection.channel()
 
         # Creates an exchange if it does not already exist, and if the exchange exists,
         # verifies that it is of the correct and expected class. 
-        channel.exchange_declare(exchange=self.config['exchange'], exchange_type='topic')
+        channel.exchange_declare(exchange=self._config['exchange'], exchange_type='topic')
         
         #Publishes message to the exchange with the given routing key
-        channel.basic_publish(exchange=self.config['exchange'], routing_key=routing_key, body=message)
-        print(f"[x] Sent message {message} for {routing_key}")
+        channel.basic_publish(exchange=self._config['exchange'], routing_key=routing_key, body=message)
+        # print(f"[x] Sent message {message} for {routing_key}")
 
     # Create new connection
     def _create_connection(self):
-        param = pika.ConnectionParameters(host=self.config['host'], port=self.config['port'], heartbeat=600,
+        param = pika.ConnectionParameters(host=self._config['host'], port=self._config['port'], heartbeat=600,
                                        blocked_connection_timeout=300) 
         return pika.BlockingConnection(param)
 
