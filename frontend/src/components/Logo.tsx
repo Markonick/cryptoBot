@@ -16,7 +16,7 @@ type LogoProps = {
 }
 export const Logo: React.FC<LogoProps> = (props:LogoProps) => {
   const classes = useStyles();
-  const { width = 100 } = props;
+  const { width = 70 } = props;
 
   const logo = (
     <div style={{ width: width }}>
