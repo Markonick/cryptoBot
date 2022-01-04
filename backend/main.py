@@ -11,6 +11,20 @@ import asyncpg
 from repositories import RabbitMqTickerRepository
 from services import TickerService
 
+
+SCHEMA = os.environ.get("SCHEMA")
+EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
+HOST = os.environ.get("RABBITMQ_HOST")
+PORT = os.environ.get("RABBITMQ_PORT")
+QUEUE = os.environ.get("RABBITMQ_QUEUE")
+RABBITMQ_KLINES_TOPIC = os.environ.get("RABBITMQ_KLINES_TOPIC")
+API_BASE_URL = os.environ.get("API_BASE_URL")
+
+app = FastAPI()
+router = InferringRouter()
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
+config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
+
 class ISubscriber(ABC):       
     @abstractmethod 
     async def consume(self, data: dict) -> None:
@@ -25,7 +39,6 @@ class RabbitmqSubscriber(ISubscriber):
       self._bindingKey = bindingKey
       self._config = config
       print(self._config)
-      self._connection = self._create_connection()
   
     # def __del__(self):
     #     self._connection.close()
@@ -46,15 +59,15 @@ class RabbitmqSubscriber(ISubscriber):
         json_loads_msg = json.loads(body)
         print(json_loads_msg)
         self._msg = json_loads_msg
-
+        print("delivery_tag")
+        print("delivery_tag")
+        print("delivery_tag")
+        print(method.delivery_tag)
         channel.basic_ack(delivery_tag = method.delivery_tag)
-    
-    def get_msg(self):
-        return self._msg
-        
+
     def consume(self):
-        
-        channel = self._connection.channel()
+        connection = self._create_connection()
+        channel = connection.channel()
         channel.exchange_declare(exchange=self._config['exchange'], exchange_type='topic')
         print('CHANNEL EXCHANGE DECLARE')
 
@@ -72,28 +85,17 @@ class RabbitmqSubscriber(ISubscriber):
         except KeyboardInterrupt:
             channel.stop_consuming()
 
-SCHEMA = os.environ.get("SCHEMA")
-EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
-HOST = os.environ.get("RABBITMQ_HOST")
-PORT = os.environ.get("RABBITMQ_PORT")
-RABBITMQ_KLINES_TOPIC = os.environ.get("RABBITMQ_KLINES_TOPIC")
-config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
-
-API_BASE_URL = os.environ.get("API_BASE_URL")
-
-app = FastAPI()
-router = InferringRouter()
-app.add_middleware(CORSMiddleware, allow_origins=["*"])
-loop = asyncio.get_event_loop()
 
 subscriber = RabbitmqSubscriber('ticker_queue', 'ticker', config)
-ticker_service = TickerService(RabbitMqTickerRepository(config, subscriber), 1)
-@cbv(router)
-class KlinesRoute:
-    @router.get(f"{API_BASE_URL}/klines")
-    async def get_klines(symbol: str) -> str:
-        topic = RABBITMQ_KLINES_TOPIC
-        # await svc.(topic, symbol)
+ticker_repo = RabbitMqTickerRepository(config, subscriber)
+ticker_service = TickerService(ticker_repo, 1)
+
+# @cbv(router)
+# class KlinesRoute:
+#     @router.get(f"{API_BASE_URL}/klines")
+#     async def get_klines(symbol: str) -> str:
+#         topic = RABBITMQ_KLINES_TOPIC
+#         # await svc.(topic, symbol)
 
 @cbv(router)
 class TickerRoute:
@@ -103,18 +105,17 @@ class TickerRoute:
 
     @router.websocket("/ws/tickers/{symbol}")
     async def websocket_endpoint(self, websocket: WebSocket, symbol: str) -> None:
-        print('WAITING FOR CONNECTION.......')
         await websocket.accept()
-        print("WEBSOCKET ACCEPTED")
         msg = {"Message: ": "connected"}
         await websocket.send_json(msg)
-        print("WEBSOCKET send_json")
         tick = await self._ticker_service.get_ticker(symbol)
-        print("WEBSOCKET awaiting send_text")
-        await websocket.send_text(tick)
+        await websocket.send_text('tick')
 
 app.include_router(router)
 
-if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
+
+# channel.start_consuming()
+# if __name__ == '__main__':
+#     loop = asyncio.get_event_loop()
+
     # loop.run_until_complete(create_pool()) 

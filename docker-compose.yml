@@ -38,6 +38,8 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
       RABBITMQ_LOGS: ${RABBITMQ_LOGS}
     restart: always
+    depends_on:
+      - binance-ticker
     ports:
      - "8000:8000"
     networks:
