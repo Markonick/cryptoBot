@@ -22,7 +22,7 @@ export const Logo: React.FC<LogoProps> = (props:LogoProps) => {
     <div style={{ width: width }}>
       <img
         className={classes.root}
-        width="100%"
+        width="80%"
         src={miaiqLogo}
         // src="https://www.kheironmed.com/wp-content/uploads/2021/08/MiaIQ-logo-white.png"
         alt="k-logo"
