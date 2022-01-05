@@ -13,23 +13,12 @@ const Tick = (props) => {
         console.log(`ws://127.0.0.1:8000/ws/tickers/${symbolCurrency}`)
         ws.onopen = () => {
             console.log('/OPEN')
-            console.log('/OPEN')
-            console.log('/OPEN')
-            console.log('/OPEN')
-            console.log('/OPEN')
-            console.log('/OPEN')
             ws.send(symbolCurrency);
         };
         ws.onmessage = (event) => {
-            console.log(event)
-            console.log('/ONMESSAGE')
-            console.log('/ONMESSAGE')
-            console.log('/ONMESSAGE')
-            console.log('/ONMESSAGE')
-            console.log('/ONMESSAGE')
-            console.log('/ONMESSAGE')
+            // console.log(event)
             let incomingTick = JSON.parse(event.data);
-            console.log(incomingTick)
+            console.log(event.data)
             setTick(incomingTick)
         };
         ws.onclose = () => {

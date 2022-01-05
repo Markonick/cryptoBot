@@ -1,6 +1,6 @@
 from typing import List
 from starlette.websockets import WebSocket
-
+import json
 import asyncio
 from aio_pika import connect, Message, IncomingMessage, ExchangeType
 
@@ -51,6 +51,6 @@ class Notifier:
         while len(self.connections) > 0:
             print(len(self.connections))
             websocket = self.connections.pop()
-            await websocket.send_text(f"{message.body}")
+            await websocket.send_text(f"{json.dumps(message.body)}")
             living_connections.append(websocket)
         self.connections = living_connections
