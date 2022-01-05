@@ -6,3 +6,4 @@ asyncpg
 asyncio
 loguru
 pika
+aio-pika
