@@ -3,7 +3,8 @@ from starlette.websockets import WebSocket
 import json
 import asyncio
 from aio_pika import connect, Message, IncomingMessage, ExchangeType
-
+from entities import Tick
+from dataclasses import fields
 
 class Notifier:
     def __init__(self):
@@ -51,6 +52,14 @@ class Notifier:
         while len(self.connections) > 0:
             print(len(self.connections))
             websocket = self.connections.pop()
-            await websocket.send_text(f"{json.dumps(message.body)}")
+            msg = json.loads((message.body).decode('UTF-8'))
+            
+            attributes = [field.name for field in fields(Tick)]
+            tick_dict = {attributes[i]: v for i, v in enumerate(msg.values())}
+            # tick = Tick(**tick_dict)
+            print(tick_dict)
+            # print(tick)
+            await websocket.send_json(tick_dict)
             living_connections.append(websocket)
+            print(len(living_connections))
         self.connections = living_connections

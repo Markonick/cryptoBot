@@ -4,6 +4,8 @@ import json, os, asyncio, websockets
 import abc
 import pika
 import sys
+from entities import Tick
+from dataclasses import fields
 # from infra.rabbitmq_pub import IPublisher, RabbitmqPublisher
 
 # CONSTANTS
@@ -28,10 +30,13 @@ CURRENCY = 'usdt'
 #   "KNDC" , "delta", "pib"  , "opt"  , "acdc", 
 #   "eth",
 # ]
+# SYMBOLS = [
+#   "btc"  , "xrp"  , "doge" , "xlm"  , "trx"  , 
+#   "eos"  , "ltc"  , "iota", "eth"  , "link" , 
+#   "ada"  , "rdd"  , "btt", "rvn" , "vet"  , "xvg",
+# ]
 SYMBOLS = [
-  "btc"  , "xrp"  , "doge" , "xlm"  , "trx"  , 
-  "eos"  , "ltc"  , "iota", "eth"  , "link" , 
-  "ada"  , "rdd"  , "btt", "rvn" , "vet"  , "xvg",
+  "btc", "xrp"  
 ]
 
 
@@ -59,6 +64,8 @@ class RabbitmqPublisher(IPublisher):
         #Publishes message to the exchange with the given routing key
         channel.basic_publish(exchange=self._config['exchange'], routing_key=routing_key, body=message)
         # print(f"[x] Sent message {message} for {routing_key}")
+        
+        connection.close()
 
     # Create new connection
     def _create_connection(self):
@@ -114,7 +121,6 @@ class CryptoStream(ICryptoStream):
             while True:
                 data = await websocket.recv()
                 data_json = json.loads(data)
-
                 if 'result' not in data_json:
                     msg = {**data_json, "exchange": self._exchange}
                     await self._ticker.run(msg)
@@ -148,15 +154,15 @@ if __name__ == '__main__':
     exchange = "binance"
     endpoint = "wss://stream.binance.com:9443/ws"
 
-    stream1 = 'ticker'
+    instrument = 'ticker'
     interval = "10s"
     stream2 = f"kline_{interval}"
     config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
     print(config)
     publisher = RabbitmqPublisher(config=config)
     ticker = Ticker(publisher)
-    stream1 = CryptoStream(ticker, endpoint, exchange, stream1)
+    stream = CryptoStream(ticker, endpoint, exchange, instrument)
     # instrument2 = CryptoStream(producer, endpoint, exchange, stream2)
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(stream1.gather_instrument_coros())
+    loop.run_until_complete(stream.gather_instrument_coros())
     # loop.run_until_complete(instrument2.gather_instrument_coros())

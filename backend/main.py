@@ -13,6 +13,7 @@ from repositories import RabbitMqTickerRepository
 from services import TickerService
 from notifier import Notifier
 
+
 SCHEMA = os.environ.get("SCHEMA")
 EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
 HOST = os.environ.get("RABBITMQ_HOST")
@@ -118,9 +119,8 @@ async def websocket_endpoint(websocket: WebSocket, symbol: str) -> None:
     try:
         print('In Webscoket endpoint try')
         while True:
-            print('In Webscoket endpoint while loop')
             data = await websocket.receive_text()
-            print(f"After Webscoket await websocket.receive_text() data: {data}")
+            print(data)
             await websocket.send_text(f"Message text was: {data}")
     except WebSocketDisconnect:
         notifier.remove(websocket)
