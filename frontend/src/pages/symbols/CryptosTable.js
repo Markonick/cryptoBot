@@ -132,7 +132,7 @@ export default function CryptosTable() {
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
+    setRowsPerPage(event.target.value);
     setPage(0);
   };
 
@@ -164,20 +164,23 @@ export default function CryptosTable() {
             </TableHead>
             <TableBody>
               {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                return (
+                if (row['symbol'] === 'BTC') {
+                  return (
                     <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                    {columns.map((column) => {
-                      const value = row[column.id];
-                      return (
-                        <TableCell className={classes.row} key={column.id} align={column.align} style={{
-                          color: "white",
-                          backgroundColor: "inherit",}}>
-                          {column.format && typeof value === 'number' ? column.format(value) : value}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
+                      {columns.map((column) => {
+                        const value = row[column.id];
+                        return (
+                          <TableCell className={classes.row} key={column.id} align={column.align} style={{
+                            color: "white",
+                            backgroundColor: "inherit",
+                          }}>
+                            {column.format && typeof value === 'number' ? column.format(value) : value}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                }
               })}
             </TableBody>
           </Table>

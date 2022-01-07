@@ -23,6 +23,7 @@ RABBITMQ_KLINES_TOPIC = os.environ.get("RABBITMQ_KLINES_TOPIC")
 API_BASE_URL = os.environ.get("API_BASE_URL")
 
 app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
 notifier = Notifier()
 router = InferringRouter()
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
