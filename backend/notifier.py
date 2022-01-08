@@ -11,7 +11,7 @@ class Notifier:
         self.connections: List[WebSocket] = []
         self.is_ready = False
 
-    async def setup(self, queue_name: str):
+    async def setup(self, symbols: List):
         self.connection = await connect(
             "amqp://guest:guest@rabbitmq/",
             loop=asyncio.get_running_loop()
@@ -25,14 +25,15 @@ class Notifier:
         )
 
         # Declaring queue
-        queue = await self.channel.declare_queue(
-            "ticker_queue", durable=True
-        )
+        for i, symbol in enumerate(symbols):
+            queue = await self.channel.declare_queue(
+                f"{symbol}", durable=True
+            )
 
-        await queue.bind(exchange, routing_key='ticker')
-        await queue.consume(self.on_message, no_ack=True)
-        print('after queue consume')
-        self.is_ready = True
+            await queue.bind(exchange, routing_key=f"{symbol}")
+            await queue.consume(self.on_message, no_ack=True)
+            print(f"after {symbol} queue consume")
+            self.is_ready = True
 
     async def push(self, msg: str):
         await self.channel.default_exchange.publish(

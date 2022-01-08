@@ -21,7 +21,7 @@ PORT = os.environ.get("RABBITMQ_PORT")
 QUEUE = os.environ.get("RABBITMQ_QUEUE")
 RABBITMQ_KLINES_TOPIC = os.environ.get("RABBITMQ_KLINES_TOPIC")
 API_BASE_URL = os.environ.get("API_BASE_URL")
-
+symbols = ['btc', 'xrp']
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 notifier = Notifier()
@@ -111,7 +111,7 @@ class ISubscriber(ABC):
 async def push_to_connected_websockets(message: str):
     print(message)
     if not notifier.is_ready:
-        await notifier.setup("test")
+        await notifier.setup(symbols)
     await notifier.push(f"! Push notification: {message} !")
 
 @app.websocket("/ws/tickers/{symbol}")

@@ -17,7 +17,7 @@ services:
     volumes:
       - ./ticker:/ticker
       - ./infra:/infra
-    restart: always
+    # restart: always
     ports:
       - "6000:6000"
     networks:
@@ -37,7 +37,7 @@ services:
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
       RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-    restart: always
+    # restart: always
     depends_on:
       - binance-ticker
     ports:
@@ -86,8 +86,6 @@ services:
     environment:
       REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
       RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-    # volumes:
-    #   - ./ticker/rabbitmq.config:/etc/rabbitmq/rabbitmq.config
     ports:
       - '5672:5672'
       - '15672:15672'

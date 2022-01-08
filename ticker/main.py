@@ -123,7 +123,7 @@ class CryptoStream(ICryptoStream):
                 data_json = json.loads(data)
                 if 'result' not in data_json:
                     msg = {**data_json, "exchange": self._exchange}
-                    await self._ticker.run(msg)
+                    await self._ticker.run(symbol, msg)
 
 
 class Ticker(ITicker):
@@ -133,11 +133,11 @@ class Ticker(ITicker):
     def __init__(self, publisher: IPublisher) -> None:
         self._publisher = publisher
 
-    async def run(self, message: dict) -> None:
+    async def run(self, symbol, message: dict) -> None:
         try:
             # produce message
             value_json = json.dumps(message).encode('utf-8')
-            self._publisher.publish('ticker', value_json)
+            self._publisher.publish(f"{symbol}", value_json)
         except Exception as ex:
             time.sleep(1)
             print(ex)

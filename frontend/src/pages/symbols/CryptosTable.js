@@ -28,7 +28,7 @@ import { PostPush } from '../../api/PostPush';
 //   "kndc", "delta", "pib", "opt", "acdc", "eth",
 // ];
 const symbols = [
-  "btc", "xrp", ];
+  "btc",  'xrp'];
 const currency = 'usdt';
 const MIN_WIDTH = 40;
 const columns = [
@@ -164,23 +164,21 @@ export default function CryptosTable() {
             </TableHead>
             <TableBody>
               {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
-                if (row['symbol'] === 'BTC') {
-                  return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
-                      {columns.map((column) => {
-                        const value = row[column.id];
-                        return (
-                          <TableCell className={classes.row} key={column.id} align={column.align} style={{
-                            color: "white",
-                            backgroundColor: "inherit",
-                          }}>
-                            {column.format && typeof value === 'number' ? column.format(value) : value}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                }
+                return (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                    {columns.map((column) => {
+                      const value = row[column.id];
+                      return (
+                        <TableCell className={classes.row} key={column.id} align={column.align} style={{
+                          color: "white",
+                          backgroundColor: "inherit",
+                        }}>
+                          {column.format && typeof value === 'number' ? column.format(value) : value}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
               })}
             </TableBody>
           </Table>
