@@ -28,7 +28,7 @@ import { PostPush } from '../../api/PostPush';
 //   "kndc", "delta", "pib", "opt", "acdc", "eth",
 // ];
 const symbols = [
-  "btc",  'xrp'];
+  "btc", "xrp" ];
 const currency = 'usdt';
 const MIN_WIDTH = 40;
 const columns = [
@@ -122,6 +122,8 @@ const rows = symbols.map((symbol) => {
   return createRow(logo, symbol.toUpperCase(), tick, "", "miniseries");
 });
 
+const rowsDict = Object.assign({}, ...rows.map((x) => ({ [x.symbol]: x })));
+console.log(rowsDict['XRP'])
 export default function CryptosTable() {
   const classes = useStyles();
   const [page, setPage] = React.useState(0);
@@ -137,8 +139,8 @@ export default function CryptosTable() {
   };
 
 
-  const data = PostPush();
-
+  const data = PostPush(symbols);
+  console.log(rows)
   return (
     <Paper className={classes.root} >
       <ThemeProvider theme={theme}>
@@ -163,7 +165,7 @@ export default function CryptosTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+              {rows.map((row) => {
                 return (
                   <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
                     {columns.map((column) => {

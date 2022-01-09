@@ -1,54 +1,10 @@
 version: "3"
 services:
-  binance-ticker:
-    container_name: binance-ticker
-    build:
-      context: .
-      dockerfile: ticker/Dockerfile
-    environment:
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-      RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-    volumes:
-      - ./ticker:/ticker
-      - ./infra:/infra
-    # restart: always
-    ports:
-      - "6000:6000"
-    networks:
-      - proxynet
-  backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    volumes:
-      - ./backend:/backend
-    environment:
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-      RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-    # restart: always
-    depends_on:
-      - binance-ticker
-    ports:
-     - "8000:8000"
-    networks:
-      - proxynet
-  # engine:
-  #   container_name: engine
+  # binance-ticker:
+  #   container_name: binance-ticker
   #   build:
   #     context: .
-  #     dockerfile: engine/Dockerfile
+  #     dockerfile: ticker/Dockerfile
   #   environment:
   #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
   #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
@@ -57,14 +13,57 @@ services:
   #     RABBITMQ_PORT: ${RABBITMQ_PORT}
   #     RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
   #     RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-  #     DISPLAY: $DISPLAY
+  #     RABBITMQ_LOGS: ${RABBITMQ_LOGS}
   #   volumes:
-  #     - ./engine:/engine
-  #   restart: always
+  #     - ./ticker:/ticker
+  #     - ./infra:/infra
+  #   # restart: always
   #   ports:
-  #    - "4000:4000"
+  #     - "6000:6000"
   #   networks:
   #     - proxynet
+  # backend:
+  #   build:
+  #     context: .
+  #     dockerfile: backend/Dockerfile
+  #   volumes:
+  #     - ./backend:/backend
+  #   environment:
+  #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+  #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  #     RABBITMQ_HOST: ${RABBITMQ_HOST}
+  #     RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+  #     RABBITMQ_PORT: ${RABBITMQ_PORT}
+  #     RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+  #     RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+  #     RABBITMQ_LOGS: ${RABBITMQ_LOGS}
+  #   # restart: always
+  #   depends_on:
+  #     - binance-ticker
+  #   ports:
+  #    - "8000:8000"
+  #   networks:
+  #     - proxynet
+  engine:
+    container_name: engine
+    build:
+      context: .
+      dockerfile: engine/Dockerfile
+    environment:
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      DISPLAY: $DISPLAY
+    volumes:
+      - ./engine:/engine
+    ports:
+     - "4000:8000"
+    networks:
+      - proxynet
   # frontend:
   #   container_name: frontend
   #   build:
@@ -80,17 +79,17 @@ services:
   #     REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
   #   networks:
   #     - proxynet
-  rabbitmq:
-    container_name: "rabbitmq"
-    image: rabbitmq:3.8-management-alpine
-    environment:
-      REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
-      RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-    ports:
-      - '5672:5672'
-      - '15672:15672'
-    networks:
-      - proxynet
+  # rabbitmq:
+  #   container_name: "rabbitmq"
+  #   image: rabbitmq:3.8-management-alpine
+  #   environment:
+  #     REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
+  #     RABBITMQ_LOGS: ${RABBITMQ_LOGS}
+  #   ports:
+  #     - '5672:5672'
+  #     - '15672:15672'
+  #   networks:
+  #     - proxynet
   # crypto-db:
   #   image: "postgres:13.2-alpine"
   #   restart: always

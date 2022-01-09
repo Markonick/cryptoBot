@@ -62,10 +62,10 @@ export const Ticker: React.FC<Props> = (props: Props) => {
 
     // return <div>{{ price: price }}</div>
     // symbolTicker(props.symbol, props.currency)
-    console.log(tick)
-    console.log(typeof tick)
+    // console.log(tick)
+    // console.log(typeof tick)
     // return { price: price }
-    return <div>{price}{ change}</div>
+    return <div>{price}</div>
     // return <li key="crypto">{price}{change}</li>
 };
 

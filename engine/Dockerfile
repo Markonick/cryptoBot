@@ -7,4 +7,7 @@ COPY /engine /engine
 COPY ./infra /engine
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt --no-cache-dir
-CMD [ "python", "main.py" ]
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:engine", "--reload", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,6 +1,7 @@
 import typing, time, abc, dataclasses
 from typing import Any, Optional
 import json, os, asyncio, websockets
+from fastapi import FastAPI, WebSocket, Depends, status
 import abc
 import pandas as pd
 import btalib
@@ -8,6 +9,18 @@ import mplfinance as mpf
 import pika
 
 from binance.client import Client, AsyncClient
+
+
+# ENVIRONMENTAL VARIABLES
+SCHEMA = os.environ.get("SCHEMA")
+EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
+HOST = os.environ.get("RABBITMQ_HOST")
+PORT = os.environ.get("RABBITMQ_PORT")
+BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
+BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
+
+
+app = FastAPI()
 
 class IPublisher(abc.ABC):       
     @abc.abstractmethod 
@@ -19,12 +32,12 @@ class RabbitmqPublisher(IPublisher):
     RabbitMQ implementation of IPublisher 
     """
     def __init__(self, config):
-        self._config = config   
-        self._connection = self._create_connection()
+        self._config = config
 
-    def publish(self, routing_key, message):    
+    def publish(self, routing_key, message):       
+        connection = self._create_connection()
         # Create a new channel with the next available channel number or pass in a channel number to use
-        channel = self._connection.channel()
+        channel = connection.channel()
 
         # Creates an exchange if it does not already exist, and if the exchange exists,
         # verifies that it is of the correct and expected class. 
@@ -32,7 +45,9 @@ class RabbitmqPublisher(IPublisher):
         
         #Publishes message to the exchange with the given routing key
         channel.basic_publish(exchange=self._config['exchange'], routing_key=routing_key, body=message)
-        print(f"[x] Sent message {message} for {routing_key}")
+        # print(f"[x] Sent message {message} for {routing_key}")
+        
+        connection.close()
 
     # Create new connection
     def _create_connection(self):
@@ -88,10 +103,9 @@ class CryptoStream(ICryptoStream):
             while True:
                 data = await websocket.recv()
                 data_json = json.loads(data)
-
                 if 'result' not in data_json:
                     msg = {**data_json, "exchange": self._exchange}
-                    await self._ticker.run(msg)
+                    await self._ticker.run(symbol, msg)
 
 
 class Ticker(ITicker):
@@ -101,40 +115,21 @@ class Ticker(ITicker):
     def __init__(self, publisher: IPublisher) -> None:
         self._publisher = publisher
 
-    async def run(self, message: dict) -> None:
+    async def run(self, symbol, message: dict) -> None:
         try:
             # produce message
             value_json = json.dumps(message).encode('utf-8')
-            self._publisher.publish('ticker', value_json)
+            self._publisher.publish(f"{symbol}", value_json)
         except Exception as ex:
             time.sleep(1)
             print(ex)
 
-async def main():
-    # ENVIRONMENTAL VARIABLES
-    SCHEMA = os.environ.get("SCHEMA")
-    EXCHANGE = os.environ.get("RABBITMQ_EXCHANGE")
-    HOST = os.environ.get("RABBITMQ_HOST")
-    PORT = os.environ.get("RABBITMQ_PORT")
-
-    BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
-    BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
+async def get_indicators():
 
     # client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)#
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
-    print(await client.ping())
     asset="BTCUSDT"
-    start="2021.10.1"
-    end="2021.12.1"
-    timeframe="1d"
-    pd.set_option("display.max_rows", None, "display.max_columns", None)
-    df=pd.DataFrame(await client.get_all_tickers())
-    df=df.set_index("symbol")
-    df["price"]=df["price"].astype("float")
-    df.index=df.index.astype("string")
-    # print(df)
-    print(df.loc["BTCUSDT"])
-    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_30MINUTE, "1 Sept, 2021", "29 Dec, 2021"))
+    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_1MINUTE, "1 Dec, 2021", "08 Jan, 2022"))
     df=df.iloc[:,:6]
     df.columns=["Date","Open","High","Low","Close","Volume"]
     df=df.set_index("Date")
@@ -151,8 +146,17 @@ async def main():
     df = df.join(macd.df)
 
     # sma = btalib.sma(df['Close'])
-    print(df.tail(5))
+    # print(df.tail(5))
+    
+    print(df['rsi14'].tail(1))
     await client.close_connection()
+    return df['rsi14'].tail(1)
+
+async def main():
+    while True:
+        indicators = await get_indicators()
+        print(indicators)
+
 # MAIN ENTRYPOINT
 if __name__ == '__main__':
 

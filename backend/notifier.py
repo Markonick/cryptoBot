@@ -12,6 +12,16 @@ class Notifier:
         self.is_ready = False
 
     async def setup(self, symbols: List):
+        
+        if len(self.connections) > 0:
+            for websocket in self.connections:
+                self.connections.remove(websocket)
+                
+        print('setting up CONNECTION again!!!!')
+        print('setting up CONNECTION again!!!!')
+        print('setting up CONNECTION again!!!!')
+        print('setting up CONNECTION again!!!!')
+        print('setting up CONNECTION again!!!!')
         self.connection = await connect(
             "amqp://guest:guest@rabbitmq/",
             loop=asyncio.get_running_loop()
@@ -27,7 +37,7 @@ class Notifier:
         # Declaring queue
         for i, symbol in enumerate(symbols):
             queue = await self.channel.declare_queue(
-                f"{symbol}", durable=True
+                f"{symbol}", auto_delete=True
             )
 
             await queue.bind(exchange, routing_key=f"{symbol}")
