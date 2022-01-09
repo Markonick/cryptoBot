@@ -1,7 +1,6 @@
 import typing, time, abc, dataclasses
 from typing import Any, Optional
 import json, os, asyncio, websockets
-from fastapi import FastAPI, WebSocket, Depends, status
 import abc
 import pandas as pd
 import btalib
@@ -19,8 +18,6 @@ PORT = os.environ.get("RABBITMQ_PORT")
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
-
-app = FastAPI()
 
 class IPublisher(abc.ABC):       
     @abc.abstractmethod 
@@ -124,57 +121,44 @@ class Ticker(ITicker):
             time.sleep(1)
             print(ex)
 
-async def get_indicators():
+async def get_indicators(client):
 
+    print("IN get_indicators....")
     # client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)#
-    client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
     asset="BTCUSDT"
-    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_1MINUTE, "1 Dec, 2021", "08 Jan, 2022"))
+    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_30MINUTE, "20 Dec, 2021", "08 Jan, 2022"))
     df=df.iloc[:,:6]
     df.columns=["Date","Open","High","Low","Close","Volume"]
     df=df.set_index("Date")
     df.index=pd.to_datetime(df.index,unit="ms")
     df=df.astype("float")
     
-    sma = btalib.sma(df, period=15)
-    df['sma5'] = btalib.sma(df['Close'], period=5).df
-    df['sma20'] = btalib.sma(df['Close'], period=20).df
-    df['sma50'] = btalib.sma(df['Close'], period=50).df
+    # sma = btalib.sma(df, period=15)
+    # df['sma5'] = btalib.sma(df['Close'], period=5).df
+    # df['sma20'] = btalib.sma(df['Close'], period=20).df
+    # df['sma50'] = btalib.sma(df['Close'], period=50).df
     df['rsi14'] = btalib.rsi(df['Close'], period=14).df
-    macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
+    # macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
   
-    df = df.join(macd.df)
+    # df = df.join(macd.df)
 
     # sma = btalib.sma(df['Close'])
     # print(df.tail(5))
     
-    print(df['rsi14'].tail(1))
-    await client.close_connection()
-    return df['rsi14'].tail(1)
+    # print(df['rsi14'].tail(-1))
+    # await client.close_connection()
+    return df['rsi14'].tail(-1)
 
 async def main():
+    client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+    print("IN MAIN....")
     while True:
-        indicators = await get_indicators()
+        indicators = await get_indicators(client)
+        # await asyncio.sleep(20)
         print(indicators)
 
 # MAIN ENTRYPOINT
 if __name__ == '__main__':
-
-    # mpf.plot(df, type='candle', volume=True, mav=7)
-    # exchange = "binance"
-    # endpoint = "wss://stream.binance.com:9443/ws"
-
-    # stream1 = 'ticker'
-    # interval = "1s"
-    # stream2 = f"kline_{interval}"
-    # config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
-    # print(config)
-    # publisher = RabbitmqPublisher(config=config)
-    # ticker = Ticker(publisher)
-    # stream1 = CryptoStream(ticker, endpoint, exchange, stream1)
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(stream1.gather_instrument_coros())
-
-
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+    task = loop.create_task(main())
+    loop.run_until_complete(task)
