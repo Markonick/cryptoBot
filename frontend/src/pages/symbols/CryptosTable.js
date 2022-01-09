@@ -10,8 +10,9 @@ import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import SymbolLogo from "./SymbolLogo";
-import Tick from "./Tick";
+import Ticker from "./Ticker";
 import TimeSeries from './TimeSeries';
+import { PostPush } from '../../api/PostPush';
 // import GetKlineData from './api/GetKlineData';
 
 
@@ -27,7 +28,7 @@ import TimeSeries from './TimeSeries';
 //   "kndc", "delta", "pib", "opt", "acdc", "eth",
 // ];
 const symbols = [
-  "btc",];
+  "btc", "xrp" ];
 const currency = 'usdt';
 const MIN_WIDTH = 40;
 const columns = [
@@ -115,26 +116,31 @@ const createRow = (logo, symbol, price, change, miniseries) => {
 
 const rows = symbols.map((symbol) => {
   const logo = <SymbolLogo symbol={symbol} />;
-  let tick = <Tick symbol={symbol} currency={currency} />;
+  let tick = <Ticker symbol={symbol} currency={currency} />;
   // let miniseries = <TimeSeries symbol={symbol} currency={currency} />;
   console.log(tick)
   return createRow(logo, symbol.toUpperCase(), tick, "", "miniseries");
 });
 
+const rowsDict = Object.assign({}, ...rows.map((x) => ({ [x.symbol]: x })));
+console.log(rowsDict['XRP'])
 export default function CryptosTable() {
   const classes = useStyles();
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [rowsPerPage, setRowsPerPage] = React.useState(1);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
+    setRowsPerPage(event.target.value);
     setPage(0);
   };
 
+
+  const data = PostPush(symbols);
+  console.log(rows)
   return (
     <Paper className={classes.root} >
       <ThemeProvider theme={theme}>
@@ -159,15 +165,16 @@ export default function CryptosTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+              {rows.map((row) => {
                 return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
+                  <TableRow hover role="checkbox" tabIndex={-1} key={row.code}>
                     {columns.map((column) => {
                       const value = row[column.id];
                       return (
                         <TableCell className={classes.row} key={column.id} align={column.align} style={{
                           color: "white",
-                          backgroundColor: "inherit",}}>
+                          backgroundColor: "inherit",
+                        }}>
                           {column.format && typeof value === 'number' ? column.format(value) : value}
                         </TableCell>
                       );
@@ -188,6 +195,6 @@ export default function CryptosTable() {
         onChangePage={handleChangePage}
         onChangeRowsPerPage={handleChangeRowsPerPage}
       />
-    </Paper>
+      </Paper>
   );
 }
