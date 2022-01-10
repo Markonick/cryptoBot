@@ -2,6 +2,7 @@ import typing, time, abc, dataclasses
 from typing import Any, Optional
 import json, os, asyncio, websockets
 import abc
+from datetime import datetime, timedelta
 import pandas as pd
 import btalib
 import mplfinance as mpf
@@ -18,9 +19,8 @@ PORT = os.environ.get("RABBITMQ_PORT")
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
-CURRENCY = 'usdt'
 SYMBOLS = [
-  "btc", "xrp"  
+  "BTCUSDT", "XRPUSDT"  
 ]
 
 
@@ -60,7 +60,7 @@ class RabbitmqPublisher(IPublisher):
 # INTERFACES / ABSTRACTIONS
 class ICryptoStream(abc.ABC):
     @abc.abstractmethod
-    async def _coro(self, symbol: str, currency: str) -> None:
+    async def _coro(self, symbol: str) -> None:
         pass
 
     @abc.abstractmethod
@@ -68,7 +68,7 @@ class ICryptoStream(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def _instrument_async(self, symbol: str, currency: str) -> None:
+    async def _instrument_async(self, symbol: str) -> None:
         pass
 
 
@@ -90,25 +90,23 @@ class CryptoStream(ICryptoStream):
         self._instrument = instrument
 
     async def gather_instrument_coros(self) -> None:
-        coros = [self._coro(symbol, CURRENCY) for symbol in SYMBOLS]
+        coros = [self._coro(symbol) for symbol in SYMBOLS]
 
         print('22222!!!!!!!!!!!!!!!!!!')
         await asyncio.gather(*coros)
 
-    async def _coro(self, symbol: str, currency: str) -> None:
-        await self._instrument_async(symbol, currency)
+    async def _coro(self, symbol: str) -> None:
+        await self._instrument_async(symbol)
 
-    async def _instrument_async(self, symbol: str, currency: str) -> None:
-        symbol_currency = f"{symbol}{currency}.{self._instrument}"
-        print('33333!!!!!!!!!!!!!!!!!!')
-
+    async def _instrument_async(self, symbol: str) -> None:
         client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
-        print('111!!!!!!!!!!!!!!!!!!')
         while True: 
-            rsi14 = await get_indicators(client)
+            rsi14 = await get_rsi14(client, symbol)
+            signal = await get_signal(rsi14, symbol)
             msg = {
-                "symbol_currency": symbol_currency, 
-                "rsi14": rsi14, 
+                "symbol": symbol, 
+                "rsi14": rsi14,
+                "signal": signal,
                 "timestamp": "timestamp",
                 "exchange": self._exchange
             }
@@ -127,24 +125,41 @@ class Ticker(ITicker):
             # produce message
             print('in ticker')
             value_json = json.dumps(message).encode('utf-8')
-            self._publisher.publish(f"{symbol}.rsi14", value_json)
+            self._publisher.publish(f"indicators.rsi14", value_json)
         except Exception as ex:
             time.sleep(1)
             print(ex)
 
-async def get_indicators(client):
+async def get_signal(rsi14: object, symbol: str) -> str:
+    """
+    IF PREVIOUS RSI > 30 AND CURRENT RSI < 30 ==> BUY SIGNAL
+    IF PREVIOUS RSI < 70 AND CURRENT RSI > 70 ==> SELL SIGNAL
+    """
+    prevRsi = list(json.loads(rsi14).values())[0]
+    curRsi = list(json.loads(rsi14).values())[1]
+    signal = None
+    if prevRsi > 30 and curRsi < 30:
+        signal = "BUY"
+    if prevRsi < 70 and curRsi > 70:
+        signal = "SELL"
+    
+    print(f"prevRsi: {prevRsi}")
+    print(f"curRsi: {curRsi}")
+    print(f"signal: {signal}")
+    return signal
 
-    print("IN get_indicators....")
+async def get_rsi14(client: AsyncClient, symbol: str):
+
     # client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)#
-    asset="BTCUSDT"
-    df= pd.DataFrame(await client.get_historical_klines(asset, Client.KLINE_INTERVAL_30MINUTE, "20 Dec, 2021", "08 Jan, 2022"))
+    start = round((datetime.now() + timedelta(days=-14)).timestamp() * 1000)
+
+    df= pd.DataFrame(await client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, start))
     df=df.iloc[:,:6]
     df.columns=["Date","Open","High","Low","Close","Volume"]
     df=df.set_index("Date")
     df.index=pd.to_datetime(df.index,unit="ms")
     df=df.astype("float")
     
-    # sma = btalib.sma(df, period=15)
     # df['sma5'] = btalib.sma(df['Close'], period=5).df
     # df['sma20'] = btalib.sma(df['Close'], period=20).df
     # df['sma50'] = btalib.sma(df['Close'], period=50).df
@@ -152,21 +167,11 @@ async def get_indicators(client):
     # macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
   
     # df = df.join(macd.df)
-
-    # sma = btalib.sma(df['Close'])
-    # print(df.tail(5))
     
-    print(df['rsi14'].tail(1).iloc[1])
+    print(df['rsi14'].tail(2).to_json())
     # await client.close_connection()
-    return df['rsi14'].tail(1).iloc[1]
+    return df['rsi14'].tail(2).to_json()
 
-async def main():
-    client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
-    print("IN MAIN....")
-    while True:
-        indicators = await get_indicators(client)
-        # await asyncio.sleep(20)
-        print(indicators)
 
 # MAIN ENTRYPOINT
 if __name__ == '__main__':

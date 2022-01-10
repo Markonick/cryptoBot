@@ -1,0 +1,11 @@
+fastapi
+fastapi-utils
+uvicorn[standard]
+starlette
+asyncio
+pika
+aio-pika
+python-binance
+pandas
+mplfinance
+bta-lib
