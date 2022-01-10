@@ -49,29 +49,24 @@ def on_message(message: IncomingMessage):
         print(" [x] %r:%r" % (message.routing_key, message.body))
         msg = json.loads((message.body).decode('UTF-8'))
         signal = msg["signal"]
-        print(signal)
         place_order(signal)
-        
+
 async def main(loop):
     # Perform connection
-    print('000000000000000')
     await asyncio.sleep(10)
     connection = await connect(
         "amqp://guest:guest@rabbitmq/", loop=loop
     )
 
-    print('11111111111111111')
     # Creating a channel
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    print('2222222222222222222')
     # Declare an exchange
     rsi_exchange = await channel.declare_exchange(
         EXCHANGE, ExchangeType.TOPIC
     )
 
-    print('33333333333333333333')
     # Declaring queues
     for i, symbol in enumerate(SYMBOLS):
         queue = await channel.declare_queue(

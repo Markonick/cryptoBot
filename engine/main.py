@@ -91,8 +91,6 @@ class CryptoStream(ICryptoStream):
 
     async def gather_instrument_coros(self) -> None:
         coros = [self._coro(symbol) for symbol in SYMBOLS]
-
-        print('22222!!!!!!!!!!!!!!!!!!')
         await asyncio.gather(*coros)
 
     async def _coro(self, symbol: str) -> None:
@@ -123,7 +121,6 @@ class Ticker(ITicker):
     async def run(self, symbol, message: dict) -> None:
         try:
             # produce message
-            print('in ticker')
             value_json = json.dumps(message).encode('utf-8')
             self._publisher.publish(f"indicators.rsi14", value_json)
         except Exception as ex:
@@ -142,10 +139,7 @@ async def get_signal(rsi14: object, symbol: str) -> str:
         signal = "BUY"
     if prevRsi < 70 and curRsi > 70:
         signal = "SELL"
-    
-    print(f"prevRsi: {prevRsi}")
-    print(f"curRsi: {curRsi}")
-    print(f"signal: {signal}")
+
     return signal
 
 async def get_rsi14(client: AsyncClient, symbol: str):
@@ -168,7 +162,6 @@ async def get_rsi14(client: AsyncClient, symbol: str):
   
     # df = df.join(macd.df)
     
-    print(df['rsi14'].tail(2).to_json())
     # await client.close_connection()
     return df['rsi14'].tail(2).to_json()
 
