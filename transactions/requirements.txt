@@ -3,6 +3,7 @@ fastapi-utils
 uvicorn[standard]
 starlette
 asyncio
+asyncpg
 pika
 aio-pika
 python-binance

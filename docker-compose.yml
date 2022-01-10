@@ -71,6 +71,7 @@ services:
       context: .
       dockerfile: transactions/Dockerfile
     environment:
+      SCHEMA: ${SCHEMA}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
@@ -83,6 +84,8 @@ services:
       - ./transactions:/transactions
     ports:
      - "7000:7000"
+    depends_on:
+      - cryptodb
     networks:
       - proxynet
 
@@ -111,16 +114,16 @@ services:
       - '15672:15672'
     networks:
       - proxynet
-  # crypto-db:
-  #   image: "postgres:13.2-alpine"
-  #   restart: always
-  #   ports:
-  #     - "5432:5432"
-  #   volumes:
-  #     - ./db/:/docker-entrypoint-initdb.d/
-  #   environment:
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  cryptodb:
+    image: "postgres:13.2-alpine"
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/:/docker-entrypoint-initdb.d/
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 networks:
   proxynet:
     name: custom_network

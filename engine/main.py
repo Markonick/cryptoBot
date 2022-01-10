@@ -20,7 +20,8 @@ BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
 SYMBOLS = [
-  "BTCUSDT", "XRPUSDT"  
+  "BTCUSDT", 
+  "XRPUSDT",
 ]
 
 
@@ -60,15 +61,11 @@ class RabbitmqPublisher(IPublisher):
 # INTERFACES / ABSTRACTIONS
 class ICryptoStream(abc.ABC):
     @abc.abstractmethod
-    async def _coro(self, symbol: str) -> None:
-        pass
-
-    @abc.abstractmethod
     async def gather_instrument_coros(self) -> None:
         pass
 
     @abc.abstractmethod
-    async def _instrument_async(self, symbol: str) -> None:
+    async def _async_instrument_coro(self, symbol: str) -> None:
         pass
 
 
@@ -90,17 +87,15 @@ class CryptoStream(ICryptoStream):
         self._instrument = instrument
 
     async def gather_instrument_coros(self) -> None:
-        coros = [self._coro(symbol) for symbol in SYMBOLS]
+        coros = [self._async_instrument_coro(symbol) for symbol in SYMBOLS]
         await asyncio.gather(*coros)
 
-    async def _coro(self, symbol: str) -> None:
-        await self._instrument_async(symbol)
-
-    async def _instrument_async(self, symbol: str) -> None:
+    async def _async_instrument_coro(self, symbol: str) -> None:
         client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+        signal = None
         while True: 
             rsi14 = await get_rsi14(client, symbol)
-            signal = await get_signal(rsi14, symbol)
+            signal = await get_signal(rsi14, symbol, signal)
             msg = {
                 "symbol": symbol, 
                 "rsi14": rsi14,
@@ -108,6 +103,7 @@ class CryptoStream(ICryptoStream):
                 "timestamp": "timestamp",
                 "exchange": self._exchange
             }
+            signal = None
             await self._ticker.run(symbol, msg)
 
 
@@ -127,24 +123,22 @@ class Ticker(ITicker):
             time.sleep(1)
             print(ex)
 
-async def get_signal(rsi14: object, symbol: str) -> str:
+async def get_signal(rsi14: object, symbol: str, signal: str) -> str:
     """
     IF PREVIOUS RSI > 30 AND CURRENT RSI < 30 ==> BUY SIGNAL
     IF PREVIOUS RSI < 70 AND CURRENT RSI > 70 ==> SELL SIGNAL
     """
     prevRsi = list(json.loads(rsi14).values())[0]
     curRsi = list(json.loads(rsi14).values())[1]
-    signal = None
-    if prevRsi > 30 and curRsi < 30:
+    # signal = None
+    if prevRsi > 30 and curRsi < 30 and signal == None:
         signal = "BUY"
-    if prevRsi < 70 and curRsi > 70:
+    if prevRsi < 70 and curRsi > 70 and signal == None:
         signal = "SELL"
-
+        
     return signal
 
 async def get_rsi14(client: AsyncClient, symbol: str):
-
-    # client = Client(BINANCE_API_KEY, BINANCE_API_SECRET)#
     start = round((datetime.now() + timedelta(days=-14)).timestamp() * 1000)
 
     df= pd.DataFrame(await client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, start))
@@ -162,6 +156,8 @@ async def get_rsi14(client: AsyncClient, symbol: str):
   
     # df = df.join(macd.df)
     
+    print(df['rsi14'].tail(2).to_json())
+    print(df['rsi14'].tail(5))
     # await client.close_connection()
     return df['rsi14'].tail(2).to_json()
 
