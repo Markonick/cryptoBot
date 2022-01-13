@@ -72,6 +72,7 @@ services:
       dockerfile: transactions/Dockerfile
     environment:
       SCHEMA: ${SCHEMA}
+      TEST_ORDER: ${TEST_ORDER}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
@@ -115,8 +116,8 @@ services:
     networks:
       - proxynet
   cryptodb:
+    container_name: "cryptodb"
     image: "postgres:13.2-alpine"
-    restart: always
     ports:
       - "5432:5432"
     volumes:
@@ -124,6 +125,8 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - proxynet
 networks:
   proxynet:
     name: custom_network

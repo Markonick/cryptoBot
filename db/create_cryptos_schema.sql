@@ -11,8 +11,10 @@ CREATE TABLE cryptos.exchange (
 CREATE TABLE cryptos.symbol (
     id SERIAL PRIMARY KEY,
     name TEXT,
-    active BOOLEAN
+    active BOOLEAN,
+    UNIQUE (name)
 );
+
 
 CREATE TABLE cryptos.exchange_symbol (
     exchange_id INT NOT NULL REFERENCES cryptos.exchange ON DELETE CASCADE,
@@ -34,8 +36,9 @@ CREATE TABLE IF NOT EXISTS cryptos.order(
     timeInForce TEXT,
     type TEXT,
     side TEXT,
-    CONSTRAINT fk_cryptos_symbol FOREIGN KEY (symbol_id) REFERENCES cryptos.symbol(id)
+    CONSTRAINT fk_order_cryptos_symbol FOREIGN KEY (symbol_id) REFERENCES cryptos.symbol(id)
 );
+CREATE INDEX IF NOT EXISTS ix_cryptos_order_symbol ON cryptos.order(symbol_id);
 
 CREATE TABLE IF NOT EXISTS cryptos.fill(
     id SERIAL PRIMARY KEY,
@@ -43,18 +46,20 @@ CREATE TABLE IF NOT EXISTS cryptos.fill(
     qty INTEGER,
     commission FLOAT,
     commissionAsset TEXT,
-    CONSTRAINT fk_cryptos_order FOREIGN KEY (order_id) REFERENCES cryptos.order(id)
+    CONSTRAINT fk_cryptos_fill_order FOREIGN KEY (order_id) REFERENCES cryptos.order(id)
 );
+CREATE INDEX IF NOT EXISTS ix_cryptos_fill_order ON cryptos.fill(order_id);
 
 CREATE TABLE IF NOT EXISTS cryptos.signal(
     id SERIAL PRIMARY KEY,
     symbol_id INT NOT NULL,
-    signal TEXT,
-    created_at BIGINT,
-    rsi FLOAT,
+    order_id INT,
+    value TEXT,
+    curr_rsi FLOAT,
     prev_rsi FLOAT,
-    prev_created_at BIGINT,
-    CONSTRAINT fk_cryptos_order FOREIGN KEY (symbol_id) REFERENCES cryptos.symbol(id)
+    created_at BIGINT,
+    CONSTRAINT fk_cryptos_signal_symbol FOREIGN KEY (symbol_id) REFERENCES cryptos.symbol(id),
+    CONSTRAINT fk_cryptos_signal_order FOREIGN KEY (order_id) REFERENCES cryptos.order(id)
 );
-
-
+CREATE INDEX IF NOT EXISTS ix_cryptos_signal_symbol ON cryptos.signal(symbol_id);
+CREATE INDEX IF NOT EXISTS ix_cryptos_signal_order ON cryptos.signal(order_id);
