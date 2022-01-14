@@ -63,8 +63,8 @@ async def write_symbol(data) -> None:
                 active
             ) 
             VALUES (
-                '{data["name"]}',
-                {data["active"]}
+                '{data.get("name")}',
+                {data.get("active")}
             )
             ON CONFLICT (name) DO NOTHING
             """
@@ -97,17 +97,17 @@ async def write_order(order_resp, data) -> None:
                 side
             ) 
             VALUES (
-                {order_resp["symbol_id"]},
-                {order_resp["clientOrder_id"]},
-                {order_resp["transactTime"]},
-                {order_resp["price"]},
-                {order_resp["origQty"]},
-                {order_resp["executedQty"]},
-                {order_resp["cummulativeQuoteQty"]},
-                {order_resp["status"]},
-                {order_resp["timeInForce"]},
-                {order_resp["type"]},
-                {order_resp["side"]}
+                {order_resp.get("symbol_id")},
+                {order_resp.get("clientOrder_id")},
+                {order_resp.get("transactTime")},
+                {order_resp.get("price")},
+                {order_resp.get("origQty")},
+                {order_resp.get("executedQty")},
+                {order_resp.get("cummulativeQuoteQty")},
+                '{order_resp.get("status")}',
+                '{order_resp.get("timeInForce")}',
+                '{order_resp.get("type")}',
+                '{order_resp.get("side")}'
             )
         """
         await connection.execute(query)
@@ -121,12 +121,12 @@ async def write_order(order_resp, data) -> None:
                 created_at
             ) 
             VALUES (
-                {data["symbol_id"]},
-                {data["order_id"]},
-                '{data["value"]}',
-                {data["curr_rsi"]},
-                {data["prev_rsi"]},
-                {data["created_at"]}
+                {data.get("symbol_id")},
+                {data.get("order_id")},
+                '{data.get("value")}',
+                {data.get("curr_rsi")},
+                {data.get("prev_rsi")},
+                {data.get("created_at")},
             )
         """
         await connection.execute(query)
@@ -148,16 +148,16 @@ async def on_message(message: IncomingMessage):
             symbol_id = await get_symbol_id(symbol)
             binance_order_resp = {
                 "symbol_id": symbol_id,
-                "clientOrder_id": None,
-                "transactTime": None,
-                "price": None,
-                "origQty": None,
-                "executedQty": None,
-                "cummulativeQuoteQty": None,
-                "status": None,
-                "timeInForce": None,
-                "type": None,
-                "side": None
+                # "clientOrder_id": None,
+                # "transactTime": None,
+                # "price": None,
+                # "origQty": None,
+                # "executedQty": None,
+                # "cummulativeQuoteQty": None,
+                # "status": None,
+                # "timeInForce": None,
+                # "type": None,
+                # "side": None
             }
 
         if TEST_ORDER:
