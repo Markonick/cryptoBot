@@ -5,6 +5,7 @@ import { Portfolio } from './pages/portfolio/Portfolio';
 import { Symbols } from './pages/symbols/Symbols';
 import { AccountSettings } from './components/AccountSettings';
 import { Profile } from './components/Profile';
+import { Orders } from './pages/orders/Orders';
 
 // ======================= ROUTES CONSTANTS ================================
 
@@ -20,6 +21,7 @@ export const ROUTES_CONFIG = {
   ABOUT: '/about',
   SETTINGS: '/settings',
   PORTFOLIO: '/portfolio',
+  ORDERS: '/orders',
   PROFILE: '/profile',
   ...SYMBOL_ROUTES,
 };
@@ -29,6 +31,7 @@ export const ROUTES_CONFIG = {
 const routes = [
   { path: ROUTES_CONFIG.ROOT, element: <Portfolio /> },
   { path: ROUTES_CONFIG.PORTFOLIO, element: <Portfolio /> },
+  { path: ROUTES_CONFIG.ORDERS, element: <Orders /> },
   { path: ROUTES_CONFIG.SYMBOLS, element: <Symbols /> },
   { path: ROUTES_CONFIG.ABOUT, element: <About /> },
   { path: ROUTES_CONFIG.SETTINGS, element: <AccountSettings /> },

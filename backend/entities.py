@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, List
 
 @dataclass()
 class Tick:
@@ -26,3 +27,71 @@ class Tick:
     last_trade_id: int
     total_number_of_trades: int
     exchange: str
+
+@dataclass
+class Symbol:
+    name: str
+    active: bool
+    
+    @property
+    def as_db_args(self) -> List:
+        return [self.name, self.active]
+
+@dataclass
+class BinanceOrderResponse:
+    symbol_id: int
+    clientOrder_id: Optional[int] = None
+    transactTime: Optional[int] = None
+    price: Optional[float] = None
+    origQty: Optional[int] = None
+    executedQty: Optional[int] = None
+    cummulativeQuoteQty: Optional[int] = None
+    status: Optional[str] = None
+    timeInForce: Optional[str] = None
+    type: Optional[str] = None
+    side: Optional[str] = None
+
+    @property
+    def as_db_args(self) -> List:
+        return [
+            self.symbol_id, self.clientOrder_id, self.transactTime, self.price, self.origQty, self.executedQty, 
+            self.cummulativeQuoteQty, self.status, self.timeInForce, self.type, self.side
+        ]
+
+@dataclass
+class Signal:
+    symbol_id: int
+    order_id: int
+    value: str
+    curr_rsi: float
+    prev_rsi: float
+    created_at: int
+
+    @property
+    def as_db_args(self) -> List:
+        return [self.symbol_id, self.order_id, self.value, self.curr_rsi, self.prev_rsi, self.created_at]
+
+@dataclass()
+class OrderDetails:
+    symbol_id: int
+    order_id: int
+    value: str
+    curr_rsi: float
+    prev_rsi: float
+    created_at: int
+    clientOrder_id: Optional[int] = None
+    transactTime: Optional[int] = None
+    price: Optional[float] = None
+    origQty: Optional[int] = None
+    executedQty: Optional[int] = None
+    cummulativeQuoteQty: Optional[int] = None
+    status: Optional[str] = None
+    timeInForce: Optional[str] = None
+    type: Optional[str] = None
+    side: Optional[str] = None
+
+@dataclass()
+class Order:
+    orderResponse: BinanceOrderResponse
+    signalDetails: Signal
+    

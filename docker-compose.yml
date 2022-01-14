@@ -22,12 +22,35 @@ services:
   #     - "6000:6000"
   #   networks:
   #     - proxynet
-  # backend:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./backend:/backend
+    environment:
+      SCHEMA: ${SCHEMA}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+      RABBITMQ_LOGS: ${RABBITMQ_LOGS}
+    # restart: always
+    depends_on:
+      # - binance-ticker
+      - cryptodb
+    ports:
+     - "8000:8000"
+    networks:
+      - proxynet
+  # engine:
+  #   container_name: engine
   #   build:
   #     context: .
-  #     dockerfile: backend/Dockerfile
-  #   volumes:
-  #     - ./backend:/backend
+  #     dockerfile: engine/Dockerfile
   #   environment:
   #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
   #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
@@ -36,57 +59,36 @@ services:
   #     RABBITMQ_PORT: ${RABBITMQ_PORT}
   #     RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
   #     RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-  #     RABBITMQ_LOGS: ${RABBITMQ_LOGS}
-  #   # restart: always
-  #   depends_on:
-  #     - binance-ticker
+  #   volumes:
+  #     - ./engine:/engine
   #   ports:
-  #    - "8000:8000"
+  #    - "4000:8000"
   #   networks:
   #     - proxynet
-  engine:
-    container_name: engine
-    build:
-      context: .
-      dockerfile: engine/Dockerfile
-    environment:
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-    volumes:
-      - ./engine:/engine
-    ports:
-     - "4000:8000"
-    networks:
-      - proxynet
 
-  transactions:
-    container_name: transactions
-    build:
-      context: .
-      dockerfile: transactions/Dockerfile
-    environment:
-      SCHEMA: ${SCHEMA}
-      TEST_ORDER: ${TEST_ORDER}
-      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
-      RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
-      RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-    volumes:
-      - ./transactions:/transactions
-    ports:
-     - "7000:7000"
-    depends_on:
-      - cryptodb
-    networks:
-      - proxynet
+  # transactions:
+  #   container_name: transactions
+  #   build:
+  #     context: .
+  #     dockerfile: transactions/Dockerfile
+  #   environment:
+  #     SCHEMA: ${SCHEMA}
+  #     TEST_ORDER: ${TEST_ORDER}
+  #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+  #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+  #     RABBITMQ_HOST: ${RABBITMQ_HOST}
+  #     RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+  #     RABBITMQ_PORT: ${RABBITMQ_PORT}
+  #     RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
+  #     RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
+  #   volumes:
+  #     - ./transactions:/transactions
+  #   ports:
+  #    - "7000:7000"
+  #   depends_on:
+  #     - cryptodb
+  #   networks:
+  #     - proxynet
 
   # frontend:
   #   container_name: frontend

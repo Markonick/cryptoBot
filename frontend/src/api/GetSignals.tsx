@@ -3,20 +3,20 @@ import { useRecoilValue } from "recoil";
 import axios from "axios";
 import { ISymbol } from "../customTypes";
 
-export const GetOrders = () => {
-  const [symbols, setSymbols] = useState<ISymbol[]>([]);
+export const GetSignals = () => {
+  const [signals, setSignals] = useState<ISymbol[]>([]);
   const baseUrl = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
-    const fetchSymbols = async () => {
-      await axios.get<ISymbol[]>(`${baseUrl}/symbols`).then(response => {
-        setSymbols(response?.data);
+    const fetchSignals = async () => {
+      await axios.get<ISymbol[]>(`${baseUrl}/signals`).then(response => {
+        setSignals(response?.data);
       });
     };
-    fetchSymbols();
+    fetchSignals();
   }, []);
 
   return (
-    { symbols }
+    { signals }
   );
 }

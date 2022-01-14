@@ -46,3 +46,32 @@ export interface ITick {
   total_number_of_trades: number
   exchange: string
 };
+
+
+export interface IBinanceOrderResponse {
+  symbol_id: number
+  clientOrder_id: number
+  transactTime: number
+  price: number
+  origQty: number
+  executedQty: number
+  cummulativeQuoteQty: number
+  status: string
+  timeInForce: string
+  type: string
+  side: string
+};
+
+export interface ISignal {
+  symbol_id: number
+  order_id: number
+  value: string
+  curr_rsi: number
+  prev_rsi: number
+  created_at: number
+};
+
+export interface IOrder {
+  orderResponse: IBinanceOrderResponse
+  signalDetails: ISignal
+};

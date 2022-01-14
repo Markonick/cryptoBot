@@ -90,6 +90,7 @@ export const Header: React.FC = (props) => {
             <Link to={ROUTES_CONFIG.ROOT} className={classes.logo}><Logo /></Link>
             <Link to={ROUTES_CONFIG.SYMBOLS} className={classes.link}>SYMBOLS</Link>
             <Link to={ROUTES_CONFIG.PORTFOLIO} className={classes.link}>PORTFOLIO</Link>
+            <Link to={ROUTES_CONFIG.ORDERS} className={classes.link}>ORDERS</Link>
             <Link to={ROUTES_CONFIG.ABOUT} className={classes.link}><HelpIcon fontSize='small' style={{ display: "flex", marginRight: 5, marginTop: -5}} />ABOUT</Link>    
           </Toolbar>
         </AppBar>

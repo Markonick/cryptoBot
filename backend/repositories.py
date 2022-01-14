@@ -3,8 +3,11 @@ from abc import ABC, abstractmethod
 import asyncpg
 import pika
 import sys
+import dataclasses
+from typing import TypeVar, Type, List
+from entities import Tick, OrderDetails
 
-from entities import Tick
+SCHEMA = os.environ.get("SCHEMA")
 
 def get_tick_query(event_time):
     return f"""
@@ -62,3 +65,47 @@ class RabbitMqTickerRepository(ITickerRepository):
         #     finally:
         #         # Will leave consumer group; perform autocommit if enabled.
         #         await consumer.stop()
+
+def is_dataclass_type(typ) -> bool:
+    "True if the argument corresponds to a data class type (but not an instance)."
+
+    return isinstance(typ, type) and dataclasses.is_dataclass(typ)
+
+T = TypeVar("T")
+def _typed_fetch(typ: Type[T], records: List[asyncpg.Record]) -> List[T]:
+    results = []
+    for record in records:
+        result = object.__new__(typ)
+        if is_dataclass_type(typ):
+            for field in dataclasses.fields(typ):
+                key = field.name
+                value = record.get(key, None)
+                if value is not None:
+                    setattr(result, key, value)
+                # elif field.default:
+                #     setattr(result, key, field.default)
+                # else:
+                #     raise RuntimeError(
+                #         f"object field {key} without default value is missing a corresponding database record column"
+                #     )
+        else:
+            for key, value in record.items():
+                setattr(result, key, value)
+
+        results.append(result)
+    return results
+    
+class OrdersRepository():
+    def __init__(self):
+        pass
+
+    async def get_all_orders(self, ) -> OrderDetails:
+        connection = await asyncpg.connect('postgres://devUser:devUser1@cryptodb:5432/cryptos')  
+        query = f"""
+            SELECT * from {SCHEMA}.order ord
+            JOIN {SCHEMA}.signal sig on ord.id = sig.order_id
+            LIMIT 20
+        """
+        result = await connection.fetch(query)
+        orders = _typed_fetch(OrderDetails, result)
+        return orders
