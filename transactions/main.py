@@ -23,11 +23,11 @@ HOST = os.environ.get("RABBITMQ_HOST")
 PORT = os.environ.get("RABBITMQ_PORT")
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
-
+print(os.environ)
 SYMBOLS = [
   "BTCUSDT", "XRPUSDT"  
 ]
-
+print()
 async def order(side: str, symbol: str, quantity: 10):
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
     try:
@@ -73,8 +73,10 @@ async def write_symbol(data) -> None:
 async def get_symbol_id(name) -> int:
     connection = await asyncpg.connect('postgresql://devUser:devUser1@cryptodb:5432/cryptos')  
     async with connection.transaction():
-        query = f"""SELECT id from {SCHEMA}.symbol sym WHERE sym.name = $1"""
-        return await connection.execute(query, name)
+        query = f"""SELECT sym.id from {SCHEMA}.symbol sym WHERE sym.name = $1"""
+        symbol_id = await connection.fetchval(query, name)
+        print(symbol_id)
+        return symbol_id
     
 async def write_order(order_resp, data) -> None:
     connection = await asyncpg.connect('postgresql://devUser:devUser1@cryptodb:5432/cryptos')  
@@ -90,7 +92,7 @@ async def write_order(order_resp, data) -> None:
                 executedQty,
                 cummulativeQuoteQty,
                 status,
-                timeIInForce,
+                timeInForce,
                 type,
                 side
             ) 
@@ -103,7 +105,7 @@ async def write_order(order_resp, data) -> None:
                 {order_resp["executedQty"]},
                 {order_resp["cummulativeQuoteQty"]},
                 {order_resp["status"]},
-                {order_resp["timeIInForce"]},
+                {order_resp["timeInForce"]},
                 {order_resp["type"]},
                 {order_resp["side"]}
             )
@@ -143,7 +145,9 @@ async def on_message(message: IncomingMessage):
         binance_order_resp = await place_order(symbol, signal)
         print(binance_order_resp)
         if TEST_ORDER:
+            symbol_id = await get_symbol_id(symbol)
             binance_order_resp = {
+                "symbol_id": symbol_id,
                 "clientOrder_id": None,
                 "transactTime": None,
                 "price": None,
@@ -151,11 +155,10 @@ async def on_message(message: IncomingMessage):
                 "executedQty": None,
                 "cummulativeQuoteQty": None,
                 "status": None,
-                "timeIInForce": None,
+                "timeInForce": None,
                 "type": None,
                 "side": None
             }
-        binance_order_resp["symbol_id"] = await get_symbol_id(symbol)
 
         if TEST_ORDER:
             order_id = -1

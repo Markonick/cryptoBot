@@ -57,7 +57,6 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-      DISPLAY: $DISPLAY
     volumes:
       - ./engine:/engine
     ports:
@@ -80,7 +79,6 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT}
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE}
       RABBITMQ_EXCHANGE: ${RABBITMQ_EXCHANGE}
-      DISPLAY: $DISPLAY
     volumes:
       - ./transactions:/transactions
     ports:

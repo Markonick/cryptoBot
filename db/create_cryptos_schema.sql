@@ -26,7 +26,7 @@ CREATE TABLE cryptos.exchange_symbol (
 CREATE TABLE IF NOT EXISTS cryptos.order(
     id SERIAL PRIMARY KEY,
     symbol_id INT NOT NULL,
-    clientOrder_id TEXT,
+    clientOrder_id INT,
     transactTime BIGINT,
     price FLOAT,
     origQty INTEGER,
