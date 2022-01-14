@@ -104,6 +104,7 @@ class CryptoStream(ICryptoStream):
                 "exchange": self._exchange
             }
             signal = None
+            asyncio.sleep(10)
             await self._ticker.run(symbol, msg)
 
 

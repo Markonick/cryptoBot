@@ -1,5 +1,6 @@
-import typing, time, abc, dataclasses
-from typing import Any, Optional
+import typing, time, abc
+from dataclasses import dataclass
+from typing import Any, Optional, List
 import json, os, asyncio, websockets
 import sys
 import asyncpg
@@ -62,23 +63,70 @@ async def write_symbol(data) -> None:
                 name,
                 active
             ) 
-            VALUES (
-                '{data.get("name")}',
-                {data.get("active")}
-            )
+            VALUES ( $1, $2 )
             ON CONFLICT (name) DO NOTHING
             """
-        await connection.execute(query)
+        await connection.execute(query, *data)
 
 async def get_symbol_id(name) -> int:
     connection = await asyncpg.connect('postgresql://devUser:devUser1@cryptodb:5432/cryptos')  
     async with connection.transaction():
         query = f"""SELECT sym.id from {SCHEMA}.symbol sym WHERE sym.name = $1"""
         symbol_id = await connection.fetchval(query, name)
-        print(symbol_id)
         return symbol_id
+
+async def get_order_id() -> int:
+    connection = await asyncpg.connect('postgresql://devUser:devUser1@cryptodb:5432/cryptos')  
+    async with connection.transaction():
+        query = f"""SELECT ord.id from {SCHEMA}.order ord ORDER BY id DESC LIMIT 1"""
+        order_id = await connection.fetchval(query)
+        return order_id
+
+@dataclass
+class Symbol:
+    name: str
+    active: bool
     
-async def write_order(order_resp, data) -> None:
+    @property
+    def as_db_args(self) -> List:
+        return [self.name, self.active]
+
+@dataclass
+class BinanceOrderResponse:
+    symbol_id: int
+    clientOrder_id: Optional[int] = None
+    transactTime: Optional[int] = None
+    price: Optional[float] = None
+    origQty: Optional[int] = None
+    executedQty: Optional[int] = None
+    cummulativeQuoteQty: Optional[int] = None
+    status: Optional[str] = None
+    timeInForce: Optional[str] = None
+    type: Optional[str] = None
+    side: Optional[str] = None
+
+    @property
+    def as_db_args(self) -> List:
+        return [
+            self.symbol_id, self.clientOrder_id, self.transactTime, self.price, self.origQty, self.executedQty, 
+            self.cummulativeQuoteQty, self.status, self.timeInForce, self.type, self.side
+        ]
+
+@dataclass
+class Signal:
+    symbol_id: int
+    order_id: int
+    value: str
+    curr_rsi: float
+    prev_rsi: float
+    created_at: int
+
+    @property
+    def as_db_args(self) -> List:
+        return [self.symbol_id, self.order_id, self.value, self.curr_rsi, self.prev_rsi, self.created_at]
+
+
+async def write_order(order_resp: BinanceOrderResponse, data: Signal) -> None:
     connection = await asyncpg.connect('postgresql://devUser:devUser1@cryptodb:5432/cryptos')  
     async with connection.transaction():
         # if not TEST_ORDER:
@@ -96,21 +144,11 @@ async def write_order(order_resp, data) -> None:
                 type,
                 side
             ) 
-            VALUES (
-                {order_resp.get("symbol_id")},
-                {order_resp.get("clientOrder_id")},
-                {order_resp.get("transactTime")},
-                {order_resp.get("price")},
-                {order_resp.get("origQty")},
-                {order_resp.get("executedQty")},
-                {order_resp.get("cummulativeQuoteQty")},
-                '{order_resp.get("status")}',
-                '{order_resp.get("timeInForce")}',
-                '{order_resp.get("type")}',
-                '{order_resp.get("side")}'
-            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         """
-        await connection.execute(query)
+
+        await connection.execute(query, *order_resp)
+
         query = f"""
             INSERT INTO {SCHEMA}.signal (
                 symbol_id,
@@ -120,68 +158,43 @@ async def write_order(order_resp, data) -> None:
                 prev_rsi,
                 created_at
             ) 
-            VALUES (
-                {data.get("symbol_id")},
-                {data.get("order_id")},
-                '{data.get("value")}',
-                {data.get("curr_rsi")},
-                {data.get("prev_rsi")},
-                {data.get("created_at")},
-            )
+            VALUES ($1, $2, $3, $4, $5, $6)
         """
-        await connection.execute(query)
+        
+        await connection.execute(query, *data)
 
 
 async def on_message(message: IncomingMessage):
     with message.process():
         print(" [x] %r:%r" % (message.routing_key, message.body))
         msg = json.loads((message.body).decode('UTF-8'))
-        symbol = msg["symbol"]
-        await write_symbol({"name": symbol, "active": True})
+        symbol_name = msg["symbol"]
+        symbol_data = Symbol(name=symbol_name, active=True)
+        await write_symbol(symbol_data.as_db_args)
         signal = msg["signal"]
-        created_at = list(json.loads(msg["rsi14"]).keys())[1]
+        created_at = json.loads(list(json.loads(msg["rsi14"]).keys())[1])
         prev_rsi = list(json.loads(msg["rsi14"]).values())[0]
         curr_rsi = list(json.loads(msg["rsi14"]).values())[1]
-        binance_order_resp = await place_order(symbol, signal)
-        print(binance_order_resp)
-        if TEST_ORDER:
-            symbol_id = await get_symbol_id(symbol)
-            binance_order_resp = {
-                "symbol_id": symbol_id,
-                # "clientOrder_id": None,
-                # "transactTime": None,
-                # "price": None,
-                # "origQty": None,
-                # "executedQty": None,
-                # "cummulativeQuoteQty": None,
-                # "status": None,
-                # "timeInForce": None,
-                # "type": None,
-                # "side": None
-            }
+        binance_order_resp = await place_order(symbol_name, signal)
 
         if TEST_ORDER:
-            order_id = -1
+            symbol_id = await get_symbol_id(symbol_name)
+            binance_order_resp = BinanceOrderResponse(symbol_id=symbol_id)
+            
+        # if TEST_ORDER:
+        order_id = await get_order_id()
         if signal == None:
             signal = "NOTRANSACTION"
         symbol_id = 1
         # if signal != None:#
         
-        data = {
-            "symbol_id": symbol_id,
-            "order_id": order_id,
-            "value": signal,
-            "curr_rsi": curr_rsi,
-            "prev_rsi": prev_rsi,
-            "created_at": created_at,
-        }
+        signal_data = Signal(symbol_id=symbol_id, order_id=order_id, value=signal, curr_rsi=curr_rsi, prev_rsi=prev_rsi, created_at=created_at) 
 
-        await write_order(binance_order_resp, data)
+        await write_order(binance_order_resp.as_db_args, signal_data.as_db_args)
 
         
 async def main(loop):
     # Perform connection
-    time.sleep(20)
     connection = await connect(
         "amqp://guest:guest@rabbitmq/", loop=loop
     )
@@ -210,6 +223,7 @@ async def main(loop):
 
 
 if __name__ == "__main__":
+    time.sleep(20)
     loop = asyncio.get_event_loop()
     loop.create_task(main(loop))
 
