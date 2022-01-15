@@ -46,9 +46,9 @@ async def push_to_connected_websockets(symbols: List[str]):
     await notifier.push(f"! Push notification: {symbols} !")
 
 @app.get("/orders")
-async def get_orders(repo = Depends(OrdersRepository)) -> List[Order]:
+async def get_orders(pageSize: int, pageNumber: int, repo = Depends(OrdersRepository)) -> List[Order]:
     print('IN ORDERS')
-    ordersDetails = await repo.get_all_orders()
+    ordersDetails = await repo.get_all_orders(pageSize, pageNumber)
     # print(orders)
     orders = []
 

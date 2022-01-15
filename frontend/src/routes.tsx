@@ -31,7 +31,7 @@ export const ROUTES_CONFIG = {
 const routes = [
   { path: ROUTES_CONFIG.ROOT, element: <Portfolio /> },
   { path: ROUTES_CONFIG.PORTFOLIO, element: <Portfolio /> },
-  { path: ROUTES_CONFIG.ORDERS, element: <Orders /> },
+  { path: ROUTES_CONFIG.ORDERS, element: <Orders pageNumber={pageNumber} pageSize={pageSize} /> },
   { path: ROUTES_CONFIG.SYMBOLS, element: <Symbols /> },
   { path: ROUTES_CONFIG.ABOUT, element: <About /> },
   { path: ROUTES_CONFIG.SETTINGS, element: <AccountSettings /> },

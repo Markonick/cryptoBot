@@ -14,6 +14,7 @@ import FirstPageIcon from '@mui/icons-material/FirstPage';
 import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
+import { IOrder, ISignal, IBinanceOrderResponse } from '../../customTypes';
 
 interface TablePaginationActionsProps {
   count: number;
@@ -81,36 +82,71 @@ function TablePaginationActions(props: TablePaginationActionsProps) {
   );
 }
 
-function createData(name: string, calories: number, fat: number) {
-  return { name, calories, fat };
+function createRow(
+  symbolId: number,
+  orderID: number,
+  value: string,
+  rsi: number,
+  previRsi: number,
+  createdAt: number,
+  clientOrderId: number,
+  transactTime: number,
+  price: number,
+  origQty: number,
+  executedQty: number,
+  cummulativeQuoteQty: number,
+  status: string,
+  timeInForce: string,
+  type: string,
+  side: string,
+) {
+    return { 
+      symbolId, 
+      orderID, 
+      value, 
+      rsi, 
+      previRsi, 
+      createdAt,
+      clientOrderId,
+      transactTime,
+      price,
+      origQty,
+      executedQty,
+      cummulativeQuoteQty,
+      status,
+      timeInForce,
+      type,
+      side, 
+    };
+  }
+
+interface TableProps {
+  orders: IOrder[];
 }
 
-  // symbol_id: number
-  // order_id: number
-  // value: string
-  // curr_rsi: number
-  // prev_rsi: number
-  // created_at: number
-const rows = [
-  createData('Cupcake', 305, 3.7),
-  createData('Donut', 452, 25.0),
-  createData('Eclair', 262, 16.0),
-  createData('Frozen yoghurt', 159, 6.0),
-  createData('Gingerbread', 356, 16.0),
-  createData('Honeycomb', 408, 3.2),
-  createData('Ice cream sandwich', 237, 9.0),
-  createData('Jelly Bean', 375, 0.0),
-  createData('KitKat', 518, 26.0),
-  createData('Lollipop', 392, 0.2),
-  createData('Marshmallow', 318, 0),
-  createData('Nougat', 360, 19.0),
-  createData('Oreo', 437, 18.0),
-].sort((a, b) => (a.calories < b.calories ? -1 : 1));
-
-export default function OrdersTable() {
+export const OrdersTable: React.FC<TableProps> = (props:TableProps) => {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-
+  const {orders} = props;
+  const rows = orders.map((order) => {
+    return createRow(
+      order.signalDetails.symbol_id, 
+      order.signalDetails.order_id, 
+      order.signalDetails.value, 
+      order.signalDetails.curr_rsi, 
+      order.signalDetails.prev_rsi, 
+      order.signalDetails.created_at,
+      order.orderResponse.clientOrder_id,
+      order.orderResponse.transactTime,
+      order.orderResponse.price,
+      order.orderResponse.origQty,
+      order.orderResponse.executedQty,
+      order.orderResponse.cummulativeQuoteQty,
+      order.orderResponse.status,
+      order.orderResponse.timeInForce,
+      order.orderResponse.type,
+      order.orderResponse.side, );
+  });
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
     page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
@@ -129,29 +165,61 @@ export default function OrdersTable() {
     setPage(0);
   };
 
-  // symbol_id: number
-  // order_id: number
-  // value: string
-  // curr_rsi: number
-  // prev_rsi: number
-  // created_at: number
+  
+  console.log(orders)
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} style={{margin: 80}}>
       <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
         <TableBody>
           {(rowsPerPage > 0
-            ? rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            : rows
+            ? orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            : orders
           ).map((row) => (
-            <TableRow key={row.name}>
+            <TableRow key={row.orderResponse.clientOrder_id}>
               <TableCell component="th" scope="row">
-                {row.name}
+                {row.orderResponse.clientOrder_id}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
-                {row.calories}
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.signalDetails.value}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
-                {row.fat}
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.signalDetails.curr_rsi}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.signalDetails.curr_rsi}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.signalDetails.order_id}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.signalDetails.created_at}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.price}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.cummulativeQuoteQty}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.executedQty}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.origQty}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.side}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.status}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.timeInForce}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.transactTime}
+              </TableCell>
+              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
+                {row.orderResponse.type}
               </TableCell>
             </TableRow>
           ))}
