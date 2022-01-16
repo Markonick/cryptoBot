@@ -175,8 +175,7 @@ async def on_message(message: IncomingMessage):
         created_at = json.loads(list(json.loads(msg["rsi14"]).keys())[1])
         prev_rsi = list(json.loads(msg["rsi14"]).values())[0]
         curr_rsi = list(json.loads(msg["rsi14"]).values())[1]
-        signal = "BUY"
-        curr_rsi = 29
+        
         if signal != None:
             binance_order_resp = await place_order(symbol_name, signal) # What is this? and why do we repopulate it 3 lines down?
             if TEST_ORDER:
