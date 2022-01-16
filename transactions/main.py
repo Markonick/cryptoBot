@@ -24,35 +24,35 @@ HOST = os.environ.get("RABBITMQ_HOST")
 PORT = os.environ.get("RABBITMQ_PORT")
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
 BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
-print(os.environ)
 SYMBOLS = [
   "BTCUSDT", "XRPUSDT"  
 ]
-print()
-async def order(side: str, symbol: str, quantity: 10):
+
+async def order(side: str, symbol: str, quantity: int ): # Need to calculate quantity!! Also there is a MI_NOTIONAL exception (BinanceAPIException) if quantity wrong!!
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+    order = {}
     try:
         if TEST_ORDER:
-            order = client.create_test_order(symbol=symbol, side=side, type='MARKET', quantity=quantity)
+            order = await client.create_test_order(symbol=symbol, side=side, type='MARKET', quantity=quantity) 
         else:
             pass
     except BinanceAPIException as e:
         # error handling goes here
+        print('BinanceAPIException')
         print(e)
     except BinanceOrderException as e:
         # error handling goes here
+        print('BinanceOrderException')
         print(e)
+
+      
+    await client.close_connection()
     return order
 
 async def place_order(symbol: str, signal: str):
-    if signal == None:
-        print("NO ORDER, DO NOTHING....")
-        order_resp = None
-    else:
-        print(f"{signal} ORDER, {signal} {signal} {signal}!!!!")
-        order_resp = await order(signal, symbol, 10)
+    print(f"{signal} ORDER, {signal} {signal} {signal}!!!!")
+    order_resp = await order(signal, symbol, 100)
         
-    print(order_resp)
     return order_resp
 
 async def write_symbol(data) -> None:
@@ -175,24 +175,24 @@ async def on_message(message: IncomingMessage):
         created_at = json.loads(list(json.loads(msg["rsi14"]).keys())[1])
         prev_rsi = list(json.loads(msg["rsi14"]).values())[0]
         curr_rsi = list(json.loads(msg["rsi14"]).values())[1]
-        binance_order_resp = await place_order(symbol_name, signal)
+        signal = "BUY"
+        curr_rsi = 29
+        if signal != None:
+            binance_order_resp = await place_order(symbol_name, signal) # What is this? and why do we repopulate it 3 lines down?
+            if TEST_ORDER:
+                symbol_id = await get_symbol_id(symbol_name)
+                binance_order_resp = BinanceOrderResponse(symbol_id=symbol_id) # What is this? and why do we populate it 3 lines up?
+            order_id = await get_order_id()
+            symbol_id = 1
+            signal_data = Signal(symbol_id=symbol_id, order_id=order_id, value=signal, curr_rsi=curr_rsi, prev_rsi=prev_rsi, created_at=created_at) 
 
-        if TEST_ORDER:
-            symbol_id = await get_symbol_id(symbol_name)
-            binance_order_resp = BinanceOrderResponse(symbol_id=symbol_id)
-            
-        # if TEST_ORDER:
-        order_id = await get_order_id()
-        if signal == None:
+            await write_order(binance_order_resp.as_db_args, signal_data.as_db_args)
+        else:       
+            print("NO ORDER, DO NOTHING....")
+            binance_order_resp = None
             signal = "NOTRANSACTION"
-        symbol_id = 1
-        # if signal != None:#
-        
-        signal_data = Signal(symbol_id=symbol_id, order_id=order_id, value=signal, curr_rsi=curr_rsi, prev_rsi=prev_rsi, created_at=created_at) 
-
-        await write_order(binance_order_resp.as_db_args, signal_data.as_db_args)
-
-        
+            
+   
 async def main(loop):
     # Perform connection
     connection = await connect(
@@ -231,5 +231,3 @@ if __name__ == "__main__":
     # data and runs callbacks whenever necessary.
     print(" [*] Waiting for messages. To exit press CTRL+C")
     loop.run_forever()
-    
-    # loop.run_until_complete(main(loop))

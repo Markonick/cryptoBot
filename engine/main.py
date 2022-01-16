@@ -31,6 +31,21 @@ class Indicator:
     value: float
     timestamp: int
 
+# INTERFACES / ABSTRACTIONS
+class ITicker(abc.ABC):       
+    @abc.abstractmethod 
+    async def run(self, data: dict) -> None:
+        pass
+
+class ICryptoStream(abc.ABC):
+    @abc.abstractmethod
+    async def gather_instrument_coros(self) -> None:
+        pass
+
+    @abc.abstractmethod
+    async def _async_instrument_coro(self, symbol: str) -> None:
+        pass
+
 class IMarketDataReader(ABC):
     @abstractmethod
     async def get_data(self, client:AsyncClient, symbol:str, start: int) -> pd.DataFrame:
@@ -74,21 +89,6 @@ class RabbitmqPublisher(IPublisher):
                                        blocked_connection_timeout=300) 
         return pika.BlockingConnection(param)
 
-# INTERFACES / ABSTRACTIONS
-class ICryptoStream(abc.ABC):
-    @abc.abstractmethod
-    async def gather_instrument_coros(self) -> None:
-        pass
-
-    @abc.abstractmethod
-    async def _async_instrument_coro(self, symbol: str) -> None:
-        pass
-
-
-class ITicker(abc.ABC):       
-    @abc.abstractmethod 
-    async def run(self, data: dict) -> None:
-        pass
 
 # CONCRETE IMPLEMENTATIONS
 class CryptoStream(ICryptoStream):
@@ -208,6 +208,5 @@ if __name__ == '__main__':
     ticker = Ticker(publisher)
     strategy = RsiStrategy()
     stream = CryptoStream(ticker, exchange, instrument, strategy)
-    # instrument2 = CryptoStream(producer, endpoint, exchange, stream2)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(stream.gather_instrument_coros())

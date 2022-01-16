@@ -20,17 +20,12 @@ interface Column {
   format?: (value: number) => string;
 }
 
-const minWidth = 100;
+const minWidth = 20;
 
 const columns: readonly Column[] = [
   { id: 'asset', label: 'asset', minWidth: minWidth },
-  { id: 'free', label: 'free', minWidth: minWidth },
-  {
-    id: 'locked',
-    label: 'locked',
-    minWidth: minWidth,
-    align: 'right',
-  }
+  { id: 'free',  label: 'free', minWidth: minWidth },
+  { id: 'locked', label: 'locked', minWidth: minWidth,}
 ];
 
 function createData(
@@ -80,7 +75,7 @@ export const PortfolioTable: React.FC = () => {
       asset.locked);
   });
 
-  const table = <Paper sx={{ width: '95%', overflow: 'hidden', margin: "50px 50px 0px 50px" }}>
+  const table = <Paper sx={{ width: '50%', overflow: 'hidden', margin: "50px 50px 0px 50px" }}>
     <TableContainer sx={{ maxHeight: "80vh" }} >
       <Table stickyHeader  aria-label="sticky table" >
         <TableHead>
@@ -116,9 +111,6 @@ export const PortfolioTable: React.FC = () => {
         </TableBody>
       </Table>
     </TableContainer>
-  </Paper>;
-
-  const pagination =
     <TablePagination
       rowsPerPageOptions={[10, 25, 100]}
       component="div"
@@ -127,12 +119,12 @@ export const PortfolioTable: React.FC = () => {
       page={page}
       onPageChange={handleChangePage}
       onRowsPerPageChange={handleChangeRowsPerPage}
-    />;
+    />
+  </Paper>;
   
   return (
     <div>
       {table}
-      {pagination}
     </div>
   );
 }
