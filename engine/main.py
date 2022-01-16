@@ -1,7 +1,8 @@
-import typing, time, abc, dataclasses
+import typing, time, abc
+from dataclasses import dataclass
 from typing import Any, Optional
 import json, os, asyncio, websockets
-import abc
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 import pandas as pd
 import btalib
@@ -24,6 +25,21 @@ SYMBOLS = [
   "XRPUSDT",
 ]
 
+
+@dataclass
+class Indicator:
+    value: float
+    timestamp: int
+
+class IMarketDataReader(ABC):
+    @abstractmethod
+    async def get_data(self, client:AsyncClient, symbol:str, start: int) -> pd.DataFrame:
+        pass
+
+class IStrategy(ABC):
+    @abstractmethod
+    async def generate_indicator(self, reader: IMarketDataReader, symbol: str, window: int) -> Indicator:
+        pass
 
 class IPublisher(abc.ABC):       
     @abc.abstractmethod 
@@ -81,10 +97,11 @@ class CryptoStream(ICryptoStream):
     by openining a websocket connection to an exchange endpoint 
     and uses the injected producer to push stream data per crypto (per coroutine) to the Kafka topic.
     """
-    def __init__(self, ticker: ITicker, exchange: str, instrument: str) -> None:
+    def __init__(self, ticker: ITicker, exchange: str, instrument: str, strategy: IStrategy) -> None:
         self._ticker = ticker
         self._exchange = exchange
         self._instrument = instrument
+        self._strategy = strategy
 
     async def gather_instrument_coros(self) -> None:
         coros = [self._async_instrument_coro(symbol) for symbol in SYMBOLS]
@@ -92,9 +109,12 @@ class CryptoStream(ICryptoStream):
 
     async def _async_instrument_coro(self, symbol: str) -> None:
         client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+
+        reader = BinanceHistoricalKlinesReader(client)
         signal = None
         while True: 
-            rsi14 = await get_rsi14(client, symbol)
+            rsi14 = await self._strategy.generate_indicator(reader, symbol, window=14)
+            # rsi14 = await get_rsi14(client, symbol)
             signal = await get_signal(rsi14, symbol, signal)
             msg = {
                 "symbol": symbol, 
@@ -139,28 +159,42 @@ async def get_signal(rsi14: object, symbol: str, signal: str) -> str:
         
     return signal
 
-async def get_rsi14(client: AsyncClient, symbol: str):
-    start = round((datetime.now() + timedelta(days=-14)).timestamp() * 1000)
+class BinanceHistoricalKlinesReader(IMarketDataReader):
+    def __init__(self, client:AsyncClient) -> None:
+        self._client = client
 
-    df= pd.DataFrame(await client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, start))
-    df=df.iloc[:,:6]
-    df.columns=["Date","Open","High","Low","Close","Volume"]
-    df=df.set_index("Date")
-    df.index=pd.to_datetime(df.index,unit="ms")
-    df=df.astype("float")
-    
-    # df['sma5'] = btalib.sma(df['Close'], period=5).df
-    # df['sma20'] = btalib.sma(df['Close'], period=20).df
-    # df['sma50'] = btalib.sma(df['Close'], period=50).df
-    df['rsi14'] = btalib.rsi(df['Close'], period=14).df
-    # macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
-  
-    # df = df.join(macd.df)
-    
-    print(df['rsi14'].tail(2).to_json())
-    print(df['rsi14'].tail(5))
-    # await client.close_connection()
-    return df['rsi14'].tail(2).to_json()
+    async def get_data(self, symbol:str, start: int) -> pd.DataFrame:
+        df = pd.DataFrame(await self._client.get_historical_klines(symbol, Client.KLINE_INTERVAL_30MINUTE, start))
+        return df
+
+
+class RsiStrategy(IStrategy):
+    async def generate_indicator(self, reader: IMarketDataReader, symbol: str, window: int) -> Indicator:
+        start = round((datetime.now() + timedelta(days=-window)).timestamp() * 1000)
+        df = await reader.get_data(symbol, start)
+        df = df.iloc[:,:6]
+        df.columns = ["Date","Open","High","Low","Close","Volume"]
+        df = df.set_index("Date")
+        df.index = pd.to_datetime(df.index,unit="ms")
+        df = df.astype("float")   
+        df['rsi14'] = btalib.rsi(df['Close'], period=window).df
+
+        return df['rsi14'].tail(2).to_json()
+
+class MacdStrategy(IStrategy):
+    async def generator_indicator(self, reader: IMarketDataReader, symbol: str, window: int) -> Indicator:
+        start = round((datetime.now() + timedelta(days=-window)).timestamp() * 1000)
+        df = reader.get_data(symbol, start)
+        df = df.iloc[:,:6]
+        df.columns = ["Date","Open","High","Low","Close","Volume"]
+        df = df.set_index("Date")
+        df.index = pd.to_datetime(df.index,unit="ms")
+        df = df.astype("float")   
+        
+        macd = btalib.macd(df['Close'], pfast=20, pslow=50, psignal=13)
+        df = df.join(macd.df)
+
+        return df['macd'].tail(2).to_json()
 
 
 # MAIN ENTRYPOINT
@@ -172,7 +206,8 @@ if __name__ == '__main__':
     config={'exchange': EXCHANGE, 'host': HOST, 'port': PORT}
     publisher = RabbitmqPublisher(config=config)
     ticker = Ticker(publisher)
-    stream = CryptoStream(ticker, exchange, instrument)
+    strategy = RsiStrategy()
+    stream = CryptoStream(ticker, exchange, instrument, strategy)
     # instrument2 = CryptoStream(producer, endpoint, exchange, stream2)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(stream.gather_instrument_coros())
