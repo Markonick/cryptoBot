@@ -1,0 +1,1 @@
+![CryptoBot platform arch v0.1](cryptoBotArch.jpeg)
