@@ -7,3 +7,4 @@ asyncio
 loguru
 pika
 aio-pika
+python-binance

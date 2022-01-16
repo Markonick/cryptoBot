@@ -1,22 +1,22 @@
 import { useEffect, useState } from "react";
 import { useRecoilValue } from "recoil";
 import axios from "axios";
-import { ISymbol } from "../customTypes";
+import { IPortfolio } from "../customTypes";
 
-export const GetOrders = () => {
-  const [symbols, setSymbols] = useState<ISymbol[]>([]);
+export const GetPortfolio = () => {
+  const [portfolio, setPortfolio] = useState<IPortfolio>();
   const baseUrl = process.env.REACT_APP_BASE_URL;
 
   useEffect(() => {
-    const fetchSymbols = async () => {
-      await axios.get<ISymbol[]>(`${baseUrl}/symbols`).then(response => {
-        setSymbols(response?.data);
+    const fetchPortfolio = async () => {
+      await axios.get<IPortfolio>(`${baseUrl}/portfolio`).then(response => {
+        setPortfolio(response?.data);
       });
     };
-    fetchSymbols();
+    fetchPortfolio();
   }, []);
 
   return (
-    { symbols }
+    { portfolio }
   );
 }

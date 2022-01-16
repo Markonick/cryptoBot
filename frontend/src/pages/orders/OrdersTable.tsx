@@ -213,13 +213,9 @@ export const OrdersTable: React.FC = () => {
       order.orderResponse.side);
   });
 
-  console.log(rows)
-  console.log(rowsPerPage)
-  console.log(page)
-  console.log(rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage))
   const table = <Paper sx={{ width: '95%', overflow: 'hidden', margin: "50px 50px 0px 50px" }}>
-    <TableContainer>
-      <Table aria-label="sticky table" >
+    <TableContainer sx={{ maxHeight: "80vh" }} >
+      <Table stickyHeader  aria-label="sticky table" >
         <TableHead>
           <TableRow >
             {columns.map((column) => (

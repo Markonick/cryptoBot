@@ -6,8 +6,11 @@ import sys
 import dataclasses
 from typing import TypeVar, Type, List
 from entities import Tick, OrderDetails
+from binance.client import AsyncClient
 
 SCHEMA = os.environ.get("SCHEMA")
+BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
+BINANCE_API_SECRET = os.environ.get('BINANCE_API_SECRET')
 
 def get_tick_query(event_time):
     return f"""
@@ -95,6 +98,18 @@ def _typed_fetch(typ: Type[T], records: List[asyncpg.Record]) -> List[T]:
         results.append(result)
     return results
     
+class PortfolioRepository():
+    def __init__(self):
+        pass
+
+    async def get_portfolio(self) -> int:
+        print(BINANCE_API_KEY)
+        client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
+        account = await client.get_account()
+        print(account)
+        return account
+
+
 class OrdersRepository():
     def __init__(self):
         pass

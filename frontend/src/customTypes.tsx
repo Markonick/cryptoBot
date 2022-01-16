@@ -80,3 +80,20 @@ export interface IOrderResponse {
   orders: IOrder[]
   count: number
 };
+
+export interface IBalance {
+  asset: string,
+  free: number,
+  locked: number
+};
+
+export interface IPortfolio {
+  makerCommission: number
+  takerCommission: number
+  buyerCommission: number
+  sellerCommission: number
+  canTrade: boolean
+  canWithdraw: boolean
+  canDeposi: boolean
+  balances: IBalance[]
+};

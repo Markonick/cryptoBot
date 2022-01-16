@@ -1,12 +1,9 @@
-import * as React from 'react';
-import { AboutCard } from '../about/AboutCard';
-
-
+import React from 'react';
+import { PortfolioTable } from '../portfolio/PortfolioTable';
 export const Portfolio: React.FC = () => {
-  const about = { miaIqVersion: 0, ceMarkNumber: 0 }
   return (
     <>
-      <AboutCard about={about} />
+      <PortfolioTable></PortfolioTable>
     </>
   );
 };

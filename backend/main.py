@@ -9,8 +9,8 @@ from starlette.middleware.cors import CORSMiddleware
 import pika
 import asyncpg
 
-from repositories import RabbitMqTickerRepository, OrdersRepository
-from entities import Order, BinanceOrderResponse, Signal
+from repositories import PortfolioRepository, OrdersRepository
+from entities import Balance, Order, BinanceOrderResponse, Signal, Portfolio
 from services import TickerService
 from notifier import Notifier
 
@@ -44,6 +44,22 @@ async def push_to_connected_websockets(symbols: List[str]):
     if not notifier.is_ready:
         await notifier.setup(symbols)
     await notifier.push(f"! Push notification: {symbols} !")
+
+@app.get("/portfolio")
+async def get_orders(repo = Depends(PortfolioRepository)) -> Portfolio:
+    result = await repo.get_portfolio()
+
+    portfolio = Portfolio(
+        makerCommission=result['makerCommission'],
+        takerCommission=result['takerCommission'],
+        buyerCommission=result['buyerCommission'],
+        sellerCommission=result['sellerCommission'],
+        canTrade=result['canTrade'],
+        canWithdraw=result['canWithdraw'],
+        canDeposit=result['canDeposit'],
+        balances=[Balance(item['asset'], item['free'], item['locked']) for item in result['balances'] if float(item['free']) > 0]
+    )
+    return portfolio
 
 @app.get("/orders")
 async def get_orders(pageSize: int, pageNumber: int, repo = Depends(OrdersRepository)) -> List[Order]:

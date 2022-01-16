@@ -94,4 +94,26 @@ class OrderDetails:
 class Order:
     orderResponse: BinanceOrderResponse
     signalDetails: Signal
-    
+
+@dataclass()
+class Portfolio:
+    orderResponse: BinanceOrderResponse
+    signalDetails: Signal
+
+@dataclass()
+class Balance:
+  asset: str
+  free: int
+  locked: int
+
+@dataclass()
+class Portfolio:
+  makerCommission: int
+  takerCommission: int
+  buyerCommission: int
+  sellerCommission: int
+  canTrade: bool
+  canWithdraw: bool
+  canDeposit: bool
+  balances: List[Balance]
+

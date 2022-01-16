@@ -30,6 +30,8 @@ services:
       - ./backend:/backend
     environment:
       SCHEMA: ${SCHEMA}
+      BINANCE_API_KEY: ${BINANCE_API_KEY}
+      BINANCE_API_SECRET: ${BINANCE_API_SECRET}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
@@ -52,6 +54,8 @@ services:
   #     context: .
   #     dockerfile: engine/Dockerfile
   #   environment:
+      # BINANCE_API_KEY: ${BINANCE_API_KEY}
+      # BINANCE_API_SECRET: ${BINANCE_API_SECRET}
   #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
   #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
   #     RABBITMQ_HOST: ${RABBITMQ_HOST}
@@ -73,6 +77,9 @@ services:
   #     dockerfile: transactions/Dockerfile
   #   environment:
   #     SCHEMA: ${SCHEMA}
+  
+      # BINANCE_API_KEY: ${BINANCE_API_KEY}
+      # BINANCE_API_SECRET: ${BINANCE_API_SECRET}
   #     TEST_ORDER: ${TEST_ORDER}
   #     RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
   #     RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
