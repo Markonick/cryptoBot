@@ -75,3 +75,8 @@ export interface IOrder {
   orderResponse: IBinanceOrderResponse
   signalDetails: ISignal
 };
+
+export interface IOrderResponse {
+  orders: IOrder[]
+  count: number
+};

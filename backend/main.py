@@ -47,8 +47,8 @@ async def push_to_connected_websockets(symbols: List[str]):
 
 @app.get("/orders")
 async def get_orders(pageSize: int, pageNumber: int, repo = Depends(OrdersRepository)) -> List[Order]:
-    print('IN ORDERS')
     ordersDetails = await repo.get_all_orders(pageSize, pageNumber)
+    count = await repo.get_orders_count()
     # print(orders)
     orders = []
 
@@ -77,7 +77,7 @@ async def get_orders(pageSize: int, pageNumber: int, repo = Depends(OrdersReposi
             ),
         )
         orders.append(order)
-    return orders
+    return {"orders": orders, "count": count}
     
 
 

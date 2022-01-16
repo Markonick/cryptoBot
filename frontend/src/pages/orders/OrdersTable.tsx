@@ -1,90 +1,120 @@
-import * as React from 'react';
-import { useTheme } from '@mui/material/styles';
-import Box from '@mui/material/Box';
+import React, { useEffect, useState } from 'react';
+import axios from "axios";
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableFooter from '@mui/material/TableFooter';
+import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import IconButton from '@mui/material/IconButton';
-import FirstPageIcon from '@mui/icons-material/FirstPage';
-import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
-import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
-import LastPageIcon from '@mui/icons-material/LastPage';
-import { IOrder, ISignal, IBinanceOrderResponse } from '../../customTypes';
+import { IOrderResponse, IOrder } from '../../customTypes';
+import { GetOrders } from '../../api/GetOrders';
 
-interface TablePaginationActionsProps {
-  count: number;
-  page: number;
-  rowsPerPage: number;
-  onPageChange: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    newPage: number,
-  ) => void;
+interface Column {
+  id: 'orderId' | 'symbolId' | 'value' | 'rsi' | 'previRsi' | 'createdAt' | 'clientOrderId' | 'transactTime' | 'price' | 'origQty' | 'executedQty' | 'cummulativeQuoteQty' | 'status' | 'timeInForce' | 'type' | 'side';
+  label: string;
+  minWidth?: number;
+  align?: 'right';
+  format?: (value: number) => string;
 }
 
-function TablePaginationActions(props: TablePaginationActionsProps) {
-  const theme = useTheme();
-  const { count, page, rowsPerPage, onPageChange } = props;
+const minWidth = 100;
 
-  const handleFirstPageButtonClick = (
-    event: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    onPageChange(event, 0);
-  };
+const columns: readonly Column[] = [
+  { id: 'orderId', label: 'orderId', minWidth: minWidth },
+  { id: 'symbolId', label: 'symboId', minWidth: minWidth },
+  {
+    id: 'value',
+    label: 'value',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'rsi',
+    label: 'rsi',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'previRsi',
+    label: 'previRsi',
+    minWidth: minWidth,
+    align: 'right',
+    format: (value: number) => value.toFixed(2),
+  },
+  {
+    id: 'createdAt',
+    label: 'createdAt',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'clientOrderId',
+    label: 'clientOrderId',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'transactTime',
+    label: 'transactTime',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'price',
+    label: 'price',
+    minWidth: minWidth,
+    align: 'right',
+    format: (value: number) => value.toFixed(2),
+  },
+  {
+    id: 'origQty',
+    label: 'origQty',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'executedQty',
+    label: 'executedQty',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'cummulativeQuoteQty',
+    label: 'cummulativeQuoteQty',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'status',
+    label: 'status',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'timeInForce',
+    label: 'timeInForce',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'type',
+    label: 'type',
+    minWidth: minWidth,
+    align: 'right',
+  },
+  {
+    id: 'side',
+    label: 'side',
+    minWidth: minWidth,
+    align: 'right',
+  },
+];
 
-  const handleBackButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onPageChange(event, page - 1);
-  };
-
-  const handleNextButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onPageChange(event, page + 1);
-  };
-
-  const handleLastPageButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    onPageChange(event, Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-  };
-
-  return (
-    <Box sx={{ flexShrink: 0, ml: 2.5 }}>
-      <IconButton
-        onClick={handleFirstPageButtonClick}
-        disabled={page === 0}
-        aria-label="first page"
-      >
-        {theme.direction === 'rtl' ? <LastPageIcon /> : <FirstPageIcon />}
-      </IconButton>
-      <IconButton
-        onClick={handleBackButtonClick}
-        disabled={page === 0}
-        aria-label="previous page"
-      >
-        {theme.direction === 'rtl' ? <KeyboardArrowRight /> : <KeyboardArrowLeft />}
-      </IconButton>
-      <IconButton
-        onClick={handleNextButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="next page"
-      >
-        {theme.direction === 'rtl' ? <KeyboardArrowLeft /> : <KeyboardArrowRight />}
-      </IconButton>
-      <IconButton
-        onClick={handleLastPageButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="last page"
-      >
-        {theme.direction === 'rtl' ? <FirstPageIcon /> : <LastPageIcon />}
-      </IconButton>
-    </Box>
-  );
-}
-
-function createRow(
+function createData(
   symbolId: number,
-  orderID: number,
+  orderId: number,
   value: string,
   rsi: number,
   previRsi: number,
@@ -100,41 +130,76 @@ function createRow(
   type: string,
   side: string,
 ) {
-    return { 
-      symbolId, 
-      orderID, 
-      value, 
-      rsi, 
-      previRsi, 
-      createdAt,
-      clientOrderId,
-      transactTime,
-      price,
-      origQty,
-      executedQty,
-      cummulativeQuoteQty,
-      status,
-      timeInForce,
-      type,
-      side, 
-    };
-  }
+  return {
+    symbolId,
+    orderId,
+    value,
+    rsi,
+    previRsi,
+    createdAt,
+    clientOrderId,
+    transactTime,
+    price,
+    origQty,
+    executedQty,
+    cummulativeQuoteQty,
+    status,
+    timeInForce,
+    type,
+    side,
+  };
+};
 
-interface TableProps {
-  orders: IOrder[];
-}
-
-export const OrdersTable: React.FC<TableProps> = (props:TableProps) => {
+export const OrdersTable: React.FC = () => {
   const [page, setPage] = React.useState(0);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const {orders} = props;
+  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const [count, setCount] = React.useState<number>(10);
+  const [orders, setOrders] = useState<IOrder[]>([]);
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(+event.target.value);
+    setPage(0);
+  };
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const baseUrl = 'http://localhost:8000';
+      const params = { pageNumber: page, pageSize: rowsPerPage }
+      await axios.get<IOrderResponse>(`${baseUrl}/orders`, { params }).then(response => {
+        console.log(response?.data)
+        setOrders(response?.data.orders);
+        setCount(response?.data.count);
+      });
+    };
+    fetchOrders();
+    console.log('INITIAL EFFECT')
+  }, [])
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const baseUrl = 'http://localhost:8000';
+      const params = { pageNumber: page, pageSize: rowsPerPage }
+      await axios.get<IOrderResponse>(`${baseUrl}/orders`, { params }).then(response => {
+        console.log(response?.data)
+        setOrders(response?.data.orders);
+        setCount(response?.data.count);
+      });
+    };
+    fetchOrders();
+    console.log('PAGE EFFECT') 
+  }, [page, rowsPerPage])
+
   const rows = orders.map((order) => {
-    return createRow(
-      order.signalDetails.symbol_id, 
-      order.signalDetails.order_id, 
-      order.signalDetails.value, 
-      order.signalDetails.curr_rsi, 
-      order.signalDetails.prev_rsi, 
+    return createData(
+      order.signalDetails.symbol_id,
+      order.signalDetails.order_id,
+      order.signalDetails.value,
+      order.signalDetails.curr_rsi,
+      order.signalDetails.prev_rsi,
       order.signalDetails.created_at,
       order.orderResponse.clientOrder_id,
       order.orderResponse.transactTime,
@@ -145,111 +210,66 @@ export const OrdersTable: React.FC<TableProps> = (props:TableProps) => {
       order.orderResponse.status,
       order.orderResponse.timeInForce,
       order.orderResponse.type,
-      order.orderResponse.side, );
+      order.orderResponse.side);
   });
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
-  const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number,
-  ) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  
-  console.log(orders)
-  return (
-    <TableContainer component={Paper} style={{margin: 80}}>
-      <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
-        <TableBody>
-          {(rowsPerPage > 0
-            ? orders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            : orders
-          ).map((row) => (
-            <TableRow key={row.orderResponse.clientOrder_id}>
-              <TableCell component="th" scope="row">
-                {row.orderResponse.clientOrder_id}
+  console.log(rows)
+  console.log(rowsPerPage)
+  console.log(page)
+  console.log(rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage))
+  const table = <Paper sx={{ width: '95%', overflow: 'hidden', margin: "50px 50px 0px 50px" }}>
+    <TableContainer>
+      <Table aria-label="sticky table" >
+        <TableHead>
+          <TableRow >
+            {columns.map((column) => (
+              <TableCell
+                key={column.id}
+                align={column.align}
+                style={{ minWidth: column.minWidth, }}
+              >
+                {column.label}
               </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.signalDetails.value}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.signalDetails.curr_rsi}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.signalDetails.curr_rsi}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.signalDetails.order_id}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.signalDetails.created_at}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.price}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.cummulativeQuoteQty}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.executedQty}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.origQty}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.side}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.status}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.timeInForce}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.transactTime}
-              </TableCell>
-              <TableCell style={{ width: 100, color: "white", fontSize: 8, }} align="right">
-                {row.orderResponse.type}
-              </TableCell>
-            </TableRow>
-          ))}
-          {emptyRows > 0 && (
-            <TableRow style={{ height: 53 * emptyRows }}>
-              <TableCell colSpan={6} />
-            </TableRow>
-          )}
-        </TableBody>
-        <TableFooter>
-          <TableRow>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
-              colSpan={3}
-              count={rows.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              SelectProps={{
-                inputProps: {
-                  'aria-label': 'rows per page',
-                },
-                native: true,
-              }}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              ActionsComponent={TablePaginationActions}
-            />
+            ))}
           </TableRow>
-        </TableFooter>
+        </TableHead>
+        <TableBody>
+          {rows.map((row) => {
+              return (
+                <TableRow hover role="checkbox" tabIndex={-1} key={row.orderId}>
+                  {columns.map((column) => {
+                    const value = row[column.id];
+                    return (
+                      <TableCell key={column.id} align={column.align} style={{ fontSize: 10, }}>
+                        {column.format && typeof value === 'number'
+                          ? column.format(value)
+                          : value}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              );
+            })}
+        </TableBody>
       </Table>
     </TableContainer>
+  </Paper>;
+
+  const pagination =
+    <TablePagination
+      rowsPerPageOptions={[10, 25, 100]}
+      component="div"
+      count={count}
+      rowsPerPage={rowsPerPage}
+      page={page}
+      onPageChange={handleChangePage}
+      onRowsPerPageChange={handleChangeRowsPerPage}
+    />;
+  
+  return (
+    <div>
+      {table}
+      {pagination}
+    </div>
   );
 }
