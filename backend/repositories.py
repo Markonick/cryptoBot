@@ -127,8 +127,6 @@ class OrdersRepository():
         connection = await asyncpg.connect('postgres://devUser:devUser1@cryptodb:5432/cryptos')
         offset = str((page_number) * page_size)
         limit = str(page_size)
-        print(offset)
-        print(limit)
         query = f"""
             SELECT * from {SCHEMA}.order ord
             JOIN {SCHEMA}.signal sig on ord.id = sig.order_id
