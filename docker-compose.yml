@@ -58,6 +58,7 @@ services:
       BINANCE_API_SECRET: ${BINANCE_API_SECRET}
     volumes:
       - ./backtesting:/backtesting
+      - ./data: /data
     ports:
      - "9876:8000"
     networks:
