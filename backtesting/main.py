@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import datetime  # For datetime objects
 import backtrader as bt # Import the backtrader platfor#
-import csv, os, asyncio
+import csv, os, asyncio, time
 from csv_writer import CsvWriter
 
 
@@ -256,11 +256,12 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
 
     return cerebro.broker.getvalue(), totalwin, totalloss, pnl_net, sqn
 
-async def run_strategy(strategy, symbol, start, end):
+async def run_strategy(strategy, symbol, periodRange, start, end):
     now = datetime.datetime.now().isoformat("_","seconds")
     datafile = f"data/{symbol}_{strategy}_{now}.csv"
     writer = CsvWriter(datafile, symbol)
     await writer.execute(start, end)
+    time.sleep(20)
     for data in os.listdir("./data"):
 
         datapath = 'data/' + data
@@ -289,8 +290,8 @@ async def run_strategy(strategy, symbol, start, end):
 
         csvfile.close()
         
-async def gather_strategy_coros(strategies, symbol, start, end) -> None:
-    coros = [run_strategy(strategy, symbol, start, end) for strategy in strategies]
+async def gather_strategy_coros(strategies, symbol, periodRange, start, end) -> None:
+    coros = [run_strategy(strategy, symbol, periodRange, start, end) for strategy in strategies]
     await asyncio.gather(*coros)
 
 
@@ -304,11 +305,12 @@ if __name__ == '__main__':
     quantity = 0.10 # percentage to buy based on the current portofolio amount
     # here it would be a unit equivalent to 1000$ if the value of our portofolio didn't change
 
-    start = '2017-01-01'
-    end = '2020-12-31'
-    strategies = ['SMA', 'RSI']
-    periodRange = range(10, 31)
+    start = '2021-12-30'
+    end = '2021-12-31'
+    # strategies = ['SMA', 'RSI']
+    strategies = ['RSI']
+    periodRange = range(14, 15)
     plot = False
     symbol = "BTCUSDT"
 
-    loop.run_until_complete(gather_strategy_coros(strategies, symbol, start, end))
+    loop.run_until_complete(gather_strategy_coros(strategies, symbol, periodRange, start, end))
