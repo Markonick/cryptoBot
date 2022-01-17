@@ -10,6 +10,7 @@ __pycache__
 /.pnp
 .pnp.js
 
+data
 # testing
 /coverage
 
