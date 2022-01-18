@@ -259,11 +259,15 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
 async def run_strategy(strategy, symbol, periodRange, start, end):
     now = datetime.datetime.now().isoformat("_","seconds")
     datafile = f"data/{symbol}_{strategy}_{now}.csv"
+    print('111111111111111111111111111111111111')
     writer = CsvWriter(datafile, symbol)
+    print('222222222222222222222222222222222222')
     await writer.execute(start, end)
+    print('333333333333333333333333333333333333')
     time.sleep(20)
     for data in os.listdir("./data"):
 
+        print('4444444444444444444444444444444444444')
         datapath = 'data/' + data
         sep = datapath[5:-4].split(sep='-') # ignore name file 'data/' and '.csv'
         # sep[0] = pair; sep[1] = year start; sep[2] = year end; sep[3] = timeframe
