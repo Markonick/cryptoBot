@@ -221,7 +221,6 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
         exit()
 
     compression, timeframe = timeFrame(datapath)
-
     # Create a Data Feed
     data = bt.feeds.GenericCSVData(
         dataname = datapath,
@@ -256,14 +255,14 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
 
     return cerebro.broker.getvalue(), totalwin, totalloss, pnl_net, sqn
 
-async def run_strategy(strategy, symbol, periodRange, start, end):
+async def run_strategy(strategy, symbol, periodRange, start, end, timeframe):
     now = datetime.datetime.now().isoformat("_","seconds")
-    datafile = f"data/{symbol}_{strategy}_{now}.csv"
+    #BTCUSDT-2017-2020-12h.csv
+    datafile = f"data/{symbol}-{start.split('-')[0]}-{end.split('-')[0]}-{timeframe}.csv"
     writer = CsvWriter(datafile, symbol)
     await writer.execute(start, end)
-    time.sleep(20)
+    # time.sleep(20)
     for data in os.listdir("./data"):
-
         datapath = 'data/' + data
         sep = datapath[5:-4].split(sep='-') # ignore name file 'data/' and '.csv'
         # sep[0] = pair; sep[1] = year start; sep[2] = year end; sep[3] = timeframe
@@ -279,7 +278,6 @@ async def run_strategy(strategy, symbol, periodRange, start, end):
 
 
         for period in periodRange:
-
             end_val, totalwin, totalloss, pnl_net, sqn = runbacktest(datapath, start, end, period, strategy, commission_val, portofolio, stake_val, quantity, plot)
             profit = (pnl_net / portofolio) * 100
 
@@ -290,8 +288,8 @@ async def run_strategy(strategy, symbol, periodRange, start, end):
 
         csvfile.close()
         
-async def gather_strategy_coros(strategies, symbol, periodRange, start, end) -> None:
-    coros = [run_strategy(strategy, symbol, periodRange, start, end) for strategy in strategies]
+async def gather_strategy_coros(strategies, symbol, periodRange, start, end, timeframe) -> None:
+    coros = [run_strategy(strategy, symbol, periodRange, start, end, timeframe) for strategy in strategies]
     await asyncio.gather(*coros)
 
 
@@ -305,12 +303,13 @@ if __name__ == '__main__':
     quantity = 0.10 # percentage to buy based on the current portofolio amount
     # here it would be a unit equivalent to 1000$ if the value of our portofolio didn't change
 
-    start = '2021-12-30'
+    start = '2020-12-30'
     end = '2021-12-31'
+    timeframe = '1d'
     # strategies = ['SMA', 'RSI']
     strategies = ['RSI']
     periodRange = range(14, 15)
     plot = False
     symbol = "BTCUSDT"
 
-    loop.run_until_complete(gather_strategy_coros(strategies, symbol, periodRange, start, end))
+    loop.run_until_complete(gather_strategy_coros(strategies, symbol, periodRange, start, end, timeframe))

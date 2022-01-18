@@ -23,5 +23,8 @@ class CsvWriter:
         with open(self._datafile, 'w', newline='') as f:
             klines_writer = csv.writer(f, delimiter=',')
             klines_writer.writerow(columns)
-            klines_writer.writerows(klines)
+            for candlestick in klines:
+                candlestick[0] = candlestick[0] / 1000 # divide timestamp to ignore miliseconds
+                print(candlestick[0])
+                klines_writer.writerow(candlestick)
 

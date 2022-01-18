@@ -59,6 +59,7 @@ services:
     volumes:
       - ./backtesting:/backtesting
       - ./data:/backtesting/data
+      - ./result:/backtesting/result
     ports:
      - "9876:8000"
     networks:
