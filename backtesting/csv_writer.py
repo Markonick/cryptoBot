@@ -1,4 +1,6 @@
 import csv, os
+from datetime import datetime
+from typing import Any
 from binance.client import AsyncClient
 
 BINANCE_API_KEY = os.environ.get('BINANCE_API_KEY')
@@ -12,11 +14,14 @@ columns = [
 ]
 
 class CsvWriter:
-    def __init__(self, datafile, symbol):
+    def __init__(self, datafile: str, symbol: str, timeframe: str):
         self._datafile = datafile
         self._symbol = symbol
+        self._timeframe = timeframe
 
-    async def execute(self, start, end):  
+    async def execute(self, start, end):
+        started = datetime.now()
+        print(f"Starting at: {started}")
         client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
         klines = await client.get_historical_klines(self._symbol, client.KLINE_INTERVAL_1MINUTE, start, end)
         print('Starting to get data from binance....')
@@ -25,6 +30,8 @@ class CsvWriter:
             klines_writer.writerow(columns)
             for candlestick in klines:
                 candlestick[0] = candlestick[0] / 1000 # divide timestamp to ignore miliseconds
-                print(candlestick[0])
                 klines_writer.writerow(candlestick)
+        
+        ended = datetime.now()
+        print(f"Ending at: {ended}")
 
