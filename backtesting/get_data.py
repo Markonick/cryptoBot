@@ -12,7 +12,7 @@ columns = [
     'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume',
     'ignore'
 ]
-
+# class 
 class CsvWriter:
     def __init__(self, datafile: str, symbol: str, timeframe: str):
         self._datafile = datafile
