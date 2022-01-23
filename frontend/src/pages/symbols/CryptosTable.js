@@ -17,15 +17,15 @@ import { PostPush } from '../../api/PostPush';
 
 
 // const symbols = [
-//   "btc", "xrp", "doge", "xlm", "trx", "eos", "ltc", "miota", "xmr", "link",
-//   "etn", "rdd", "strax", "npxs", "glm", "aave", "sol", "atom", "cro", "ht",
-//   "mkr", "snx", "algo", "ksm", "comp", "vgx", "ftm", "zec", "rune", "cel",
-//   "rev", "icx", "hbar", "chsb", "iost", "zks", "lrc", "omg", "pax", "husd",
-//   "vet", "sc", "btt", "dash", "xtz", "bch", "bnb", "ada", "usdt", "dcn",
-//   "tfuel", "xvg", "rvn", "bat", "dot", "theta", "luna", "neo", "ftt", "dai",
-//   "egld", "fil", "leo", "sushi", "dcr", "ren", "nexo", "zrx", "okb", "waves",
-//   "dgb", "ont", "bnt", "nano", "matic", "xwc", "zen", "btmx", "qtum", "hnt",
-//   "kndc", "delta", "pib", "opt", "acdc", "eth",
+  // "btc", "xrp", "doge", "xlm", "trx", "eos", "ltc", "miota", "xmr", "link",
+  // "etn", "rdd", "strax", "npxs", "glm", "aave", "sol", "atom", "cro", "ht",
+  // "mkr", "snx", "algo", "ksm", "comp", "vgx", "ftm", "zec", "rune", "cel",
+  // "rev", "icx", "hbar", "chsb", "iost", "zks", "lrc", "omg", "pax", "husd",
+  // "vet", "sc", "btt", "dash", "xtz", "bch", "bnb", "ada", "usdt", "dcn",
+  // "tfuel", "xvg", "rvn", "bat", "dot", "theta", "luna", "neo", "ftt", "dai",
+  // "egld", "fil", "leo", "sushi", "dcr", "ren", "nexo", "zrx", "okb", "waves",
+  // "dgb", "ont", "bnt", "nano", "matic", "xwc", "zen", "btmx", "qtum", "hnt",
+  // "kndc", "delta", "pib", "opt", "acdc", "eth",
 // ];
 const symbols = [
   "btc", "xrp" ];

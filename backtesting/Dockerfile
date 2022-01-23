@@ -17,4 +17,6 @@ RUN wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz \
   && pip install ta-lib
 EXPOSE 8000
 
-CMD ["python", "main.py"]
+# CMD ["python", "main.py"]
+
+CMD ["python", "get_data.py"]

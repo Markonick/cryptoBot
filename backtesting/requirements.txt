@@ -5,6 +5,7 @@ starlette
 asyncio
 pika
 python-binance
+binance_downloader
 pandas
 bta-lib
 backtrader
