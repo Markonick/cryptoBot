@@ -11,8 +11,8 @@ __pycache__
 /.pnp
 .pnp.js
 
-data
-/data
+# data
+# /data
 # testing
 /coverage
 
