@@ -96,8 +96,10 @@ class WriteHistoricalData:
         with open(datafile, 'w', newline='') as f:
             klines_writer = csv.writer(f, delimiter=',')
             klines_writer.writerow(columns)
-            klines_writer.writerows(binance_data_model.data)
-        
+            # klines_writer.writerows(binance_data_model.data)
+            for candlestick in binance_data_model.data:
+                candlestick[0] = candlestick[0] / 1000 # divide timestamp to ignore miliseconds
+                klines_writer.writerow(candlestick)
         ended = datetime.now()
         print(f"Ending at: {ended}")
 
@@ -114,6 +116,6 @@ if __name__ == '__main__':
     now = datetime.now()
     symbols = ['BTCUSDT']
     interval = '30m'
-    start = '20151130'
-    end = '20220122'
+    start = '2015-11-30'
+    end = '2022-01-22'
     asyncio.run(gather_coros(symbols, interval, start, end))

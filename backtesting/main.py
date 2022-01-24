@@ -189,7 +189,8 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
         fromdate = datetime.datetime.strptime(start, '%Y-%m-%d'),
         todate = datetime.datetime.strptime(end, '%Y-%m-%d'),
         reverse = False)
-    print("2222222222222222222222")
+
+    print(data)
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
