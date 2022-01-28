@@ -250,8 +250,8 @@ if __name__ == '__main__':
     stake_val = 1
     quantity = 0.10 # percentage to buy based on the current portofolio amount
     # here it would be a unit equivalent to 1000$ if the value of our portofolio didn't change
-    start = '2015-11-30'
-    end = '2022-01-22'
+    start = '2022-01-01'
+    end = '2022-01-28'
     timeframe = '1d'
     # strategies = ['SMA', 'RSI']
     strategies = ['RSI']
