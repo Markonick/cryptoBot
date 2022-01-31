@@ -50,6 +50,7 @@ services:
   #     - proxynet
   backtesting:
     container_name: backtesting
+    command: ["python", "main.py"]
     build:
       context: .
       dockerfile: backtesting/Dockerfile

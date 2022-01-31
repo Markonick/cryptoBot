@@ -10,3 +10,4 @@ pandas
 bta-lib
 backtrader
 backtrader[plotting]
+matplotlib==3.2.2

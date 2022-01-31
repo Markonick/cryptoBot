@@ -98,7 +98,8 @@ class WriteHistoricalData:
             klines_writer.writerow(columns)
             # klines_writer.writerows(binance_data_model.data)
             for candlestick in binance_data_model.data:
-                candlestick[0] = candlestick[0] / 1000 # divide timestamp to ignore miliseconds
+                candlestick[0] = int(candlestick[0] / 1000) # divide timestamp to ignore miliseconds
+                candlestick[6] = int(candlestick[6] / 1000) # divide timestamp to ignore miliseconds
                 klines_writer.writerow(candlestick)
         ended = datetime.now()
         print(f"Ending at: {ended}")
@@ -114,8 +115,8 @@ async def gather_coros(symbols: List[str], interval: str, start_str: str, end_st
 # MAIN ENTRYPOINT
 if __name__ == '__main__':
     now = datetime.now()
-    symbols = ['BTCUSDT']
+    symbols = ['BTCUSDT', 'XRPUSDT', 'ETHUSDT', 'DOGEUSDT']
     interval = '30m'
-    start = '2015-11-30'
-    end = '2022-01-22'
+    start = '2017-01-01'
+    end = '2022-01-29'
     asyncio.run(gather_coros(symbols, interval, start, end))
