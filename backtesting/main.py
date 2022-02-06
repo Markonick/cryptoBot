@@ -73,13 +73,15 @@ class RSIStrategy(bt.Strategy):
         self.amount = None
         # Add a MovingAverageSimple indicator
         self.rsi = bt.talib.RSI(self.datas[0], timeperiod=self.params.maperiod)
+        self.movav= bt.talib.MACD(self.datas[0], timeperiod=self.params.maperiod)
         self.order_stopLoss = None
+        self.macdabove = False
 
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
             # Buy/Sell order submitted/accepted to/by broker - Nothing to do
             return
-        print(self.params.stopLoss)
+        
         # Check if an order has been completed
         # Attention: broker could reject order if not enough cash
         if order.status in [order.Completed]:
@@ -92,7 +94,6 @@ class RSIStrategy(bt.Strategy):
                 if self.params.stopLoss:
                     if self.params.stopLoss > 0:
                         stop_price = order.executed.price * (1 - self.params.stopLoss)
-                        print(stop_price)
                         self.order_stopLoss = self.sell(exectype=bt.Order.Stop, price=stop_price)
                         if self.params.verbose:
                             print('  STOP @price: {:.2f}'.format(stop_price))
@@ -128,13 +129,15 @@ class RSIStrategy(bt.Strategy):
         # Check if we are in the market
         if not self.position:
             # Not yet ... we MIGHT BUY if ...
-            if self.rsi < min(self.params.limits):
+            if self.rsi < min(self.params.limits) and self.macdabove == False and self.movav.lines.macd[0] > self.movav.lines.macdsignal[0]:
                 # Keep track of the created order to avoid a 2nd order
                 self.amount = (self.broker.getvalue() * self.params.quantity) / self.dataclose[0]
                 self.order = self.buy(size=self.amount)
+                self.macdabove = True
         else:
             # Already in the market ... we might sell
-            if self.rsi > max(self.params.limits):
+            if self.macdabove == True and self.rsi > max(self.params.limits):
+                self.macdabove = False
                 # Keep track of the created order to avoid a 2nd order
                 self.order = self.sell(size=self.amount)
 # ______________________ End Strategy Class
@@ -197,8 +200,8 @@ def getWinLoss(analyzer):
 
 def getSQN(analyzer):
     return round(analyzer.sqn,2)
-
-def runbacktest(datapath, start, end, period, strategy, commission_val=None, portofolio=10000.0, stake_val=1, quantity=0.01, plt=False, limits=[30, 70], stopLoss=0.0,):
+    
+def runbacktest(verbose, datapath, start, end, period, strategy, commission_val=None, portofolio=10000.0, stake_val=1, quantity=0.01, plt=False, limits=[30, 70], stopLoss=0.0,):
     # Create a cerebro entity
     cerebro = bt.Cerebro()
     # Add a FixedSize sizer according to the stake
@@ -212,7 +215,7 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
         cerebro.addstrategy(SMAStrategy, maperiod=period, quantity=quantity)
     elif strategy == 'RSI':
         # cerebro.optstrategy(RSIStrategy, maperiod=period, quantity=quantity)
-        cerebro.addstrategy(RSIStrategy, maperiod=period, quantity=quantity, stopLoss=stopLoss, limits=limits)
+        cerebro.addstrategy(RSIStrategy, verbose=verbose, maperiod=period, quantity=quantity, stopLoss=stopLoss, limits=limits)
     else :
         print('no strategy')
         exit()
@@ -272,8 +275,8 @@ def runbacktest(datapath, start, end, period, strategy, commission_val=None, por
 #                     result_writer.writerow([sep[0], sep[3] , start, end, strategy, period, round(end_val,3), round(profit,3), totalwin, totalloss, sqn])
 #         csvfile.close()
 
-def run_strategy(strategy, datapath, start, end,  period, limits, stopLoss):
-    end_val, totalwin, totalloss, pnl_net, sqn = runbacktest(datapath, start, end, period, strategy, commission_val, portofolio, stake_val, quantity, plot, limits, stopLoss)
+def run_strategy(strategy, datapath, start, end,  period, limits, stopLoss, verbose):
+    end_val, totalwin, totalloss, pnl_net, sqn = runbacktest(verbose, datapath, start, end, period, strategy, commission_val, portofolio, stake_val, quantity, plot, limits, stopLoss)
     profit = (pnl_net / portofolio) * 100
                     # view the data in the console while processing
                     # print('data processed: %s, %s (Period %d, limits %d, stopLoss %d,) --- Ending Value: %.2f --- Total win/loss %d/%d, SQN %.2f' % (datapath[5:], strategy, period, end_val, totalwin, totalloss, sqn))
@@ -289,20 +292,23 @@ def run_strategy(strategy, datapath, start, end,  period, limits, stopLoss):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     commission_val = 0.04 # 0.04% taker fees binance usdt futures
-    portofolio = 10000.0 # amount of money we start with
+    portofolio = 3000.0 # amount of money we start with
     stake_val = 1
     quantity = 0.10 # percentage to buy based on the current portofolio amount
     # here it would be a unit equivalent to 1000$ if the value of our portofolio didn't change
 
-    periodRange = range(14, 30)
-    stopLossRange = [0, 0.001, 0.005, 0.01, -0.01]
+    # periodRange = range(14, 30)
+    periodRange = range(10, 30)
+    # stopLossRange = [0, 0.001, 0.005, 0.01, -0.01]
+    stopLossRange = [0]
     limitsRange = [[70,30], [70,25], [60,25], [65,25], [70,20]]
+    # limitsRange = [[60,25]]
     start = '2017-01-01'
     end = '2022-01-29'
     # timeframe = '1d'
     # strategies = ['SMA', 'RSI']
     strategies = ['RSI']
-    plot = False
+    plot = True
     # symbol = "BTCUSDT"
     import multiprocessing
     import time
@@ -313,11 +319,12 @@ if __name__ == '__main__':
             for period in periodRange:
                 for stopLoss in stopLossRange:
                     for limits in limitsRange:
-                        datapath = 'data/' + os.listdir("./data")[0]
+                        # datapath = 'data/' + os.listdir("./data")[0]
+                        datapath = "data/XRPUSDT-20170101-20220129-30m.csv"
                         sep = datapath[5:-4].split(sep='-') # ignore name file 'data/' and '.csv'
 
                         dataname = f"result/{strategy}-{sep[0]}-{start.replace('-','')}-{end.replace('-','')}-{sep[3]}.csv"
-                        params = (strategy, datapath, start, end, period, limits, stopLoss)
+                        params = (strategy, datapath, start, end, period, limits, stopLoss, False)
                         paramsIterations.append(params)
                         # yield params
         return paramsIterations
@@ -326,7 +333,7 @@ if __name__ == '__main__':
     tic = time.time()
     print(f"# CPUs: {multiprocessing.cpu_count()}")
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    # Params: strategy, start, end, datapath, period, limits, stopLoss
+    # Params: strategy, datapath, start, end, period, limits, stopLoss, verbose
     # pool.map(run_strategy, get_params())
     pool.starmap(run_strategy, get_params())
     # pool.starmap(run_strategy, [('RSI', 'data/DOGEUSDT-20170101-20220129-30m.csv', '2017-01-01', '2022-01-29', 14, [70, 20], 0)])
