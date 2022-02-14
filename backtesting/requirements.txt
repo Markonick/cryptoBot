@@ -1,6 +1,6 @@
 fastapi
 fastapi-utils
-uvicorn[standard]
+uvicorn
 starlette
 asyncio
 pika

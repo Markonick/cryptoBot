@@ -2,57 +2,135 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from datetime import datetime
 from typing import List  # For datetime objects
-import backtrader as bt # Import the backtrader platfor#
+import backtrader as bt # Import the backtrader platform#
 import csv, os, asyncio, time
+from random import random
 
-
-# Create a Stratey
-class SMAStrategy(bt.Strategy):
-    params = (
-        ('maperiod', None),
-        ('quantity', None)
+class RSIDivergence(bt.ind.PeriodN):
+    lines = ('signal',)
+    params = dict(
+        rsi_period=30,
+        hl_period=100,
+        hl_min=25
     )
 
     def __init__(self):
-        # Keep a reference to the "close" line in the data[0] dataseries
-        self.dataclose = self.datas[0].close
-        # To keep track of pending orders and buy price/commission
-        self.order = None
-        self.buyprice = None
-        self.buycomm = None
-        self.amount = None
-        # Add a MovingAverageSimple indicator
-        self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period=self.params.maperiod)
+        self.hfi = bt.ind.FindFirstIndexHighest(self.data.high, period=self.p.hl_period)
+        self.lfi = bt.ind.FindFirstIndexLowest(self.data.low, period=self.p.hl_period)
+        self.rsi = bt.ind.RSI_Safe(period=self.p.rsi_period)
 
-    def notify_order(self, order):
-        if order.status in [order.Submitted, order.Accepted]:
-            # Buy/Sell order submitted/accepted to/by broker - Nothing to do
-            return
-        # Check if an order has been completed
-        # Attention: broker could reject order if not enough cash
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-        self.order = None
+    def signal_get(self):
+        signal = 0
+        if self.hfp >= self.hsp:
+            if self.rsi[-int(self.hfi[0])] < self.rsi[-int(self.hsi)]:
+                signal -= 1
+
+        if self.lfp <= self.lsp:
+            if self.rsi[-int(self.lfi[0])] > self.rsi[-int(self.lsi)]:
+                signal += 1
+
+        return signal
 
     def next(self):
-        # Check if an order is pending ... if yes, we cannot send a 2nd one
-        if self.order:
-            return
-        # Check if we are in the market
-        if not self.position:
-            # Not yet ... we MIGHT BUY if ...
-            if self.dataclose[0] > self.sma[0]:
-                # Keep track of the created order to avoid a 2nd order
-                self.amount = (self.broker.getvalue() * self.params.quantity) / self.dataclose[0]
-                self.order = self.buy(size=self.amount)
-        else:
-            # Already in the market ... we might sell
-            if self.dataclose[0] < self.sma[0]:
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.sell(size=self.amount)
+        h_iterable = self.data.get(size=self.p.hl_period, ago=-int(self.hfi[0]) - self.p.hl_min)
+        l_iterable = self.data.get(size=self.p.hl_period, ago=-int(self.lfi[0]) - self.p.hl_min)
 
+        if len(h_iterable) > 0 and len(l_iterable) > 0:
+            m = max(h_iterable)
+            self.hsi = next(i for i, v in enumerate(reversed(h_iterable)) if v == m) + int(self.hfi[0]) + self.p.hl_min
+
+            m = min(l_iterable)
+            self.lsi = next(i for i, v in enumerate(reversed(l_iterable)) if v == m) + int(self.lfi[0]) + self.p.hl_min
+
+            self.hfp = self.data.high[-int(self.hfi[0])]
+            self.hsp = self.data.high[-int(self.hsi)]
+            self.lfp = self.data.low[-int(self.lfi[0])]
+            self.lsp = self.data.low[-int(self.lsi)]
+
+            self.lines.signal[0] = self.signal_get()
+        else:
+            self.lines.signal[0] = 0
+class BOLLStrat(bt.Strategy):
+ 
+    '''
+    This is a simple mean reversion bollinger band strategy.
+ 
+    Entry Critria:
+        - Long:
+            - Price closes below the lower band
+            - Stop Order entry when price crosses back above the lower band
+        - Short:
+            - Price closes above the upper band
+            - Stop order entry when price crosses back below the upper band
+    Exit Critria
+        - Long/Short: Price touching the median line
+    '''
+ 
+    params = (
+        ("period", 10),
+        ("devfactor", 2),
+        ("size", 100),
+        ("debug", False)
+        )
+ 
+    def __init__(self):
+        self.boll = bt.indicators.BollingerBands(period=self.p.period, devfactor=self.p.devfactor)
+        #self.sx = bt.indicators.CrossDown(self.data.close, self.boll.lines.top)
+        #self.lx = bt.indicators.CrossUp(self.data.close, self.boll.lines.bot)
+ 
+    def next(self):
+ 
+        orders = self.broker.get_orders_open()
+ 
+        # Cancel open orders so we can track the median line
+        if orders:
+            for order in orders:
+                self.broker.cancel(order)
+ 
+        if not self.position:
+ 
+            if self.data.close > self.boll.lines.top:
+ 
+                self.sell(exectype=bt.Order.Stop, price=self.boll.lines.top[0], size=self.p.size)
+ 
+            if self.data.close < self.boll.lines.bot:
+                self.buy(exectype=bt.Order.Stop, price=self.boll.lines.bot[0], size=self.p.size)
+ 
+ 
+        else:
+ 
+ 
+            if self.position.size > 0:
+                self.sell(exectype=bt.Order.Limit, price=self.boll.lines.mid[0], size=self.p.size)
+ 
+            else:
+                self.buy(exectype=bt.Order.Limit, price=self.boll.lines.mid[0], size=self.p.size)
+ 
+        if self.p.debug:
+            print('---------------------------- NEXT ----------------------------------')
+            print("1: Data Name:                            {}".format(data._name))
+            print("2: Bar Num:                              {}".format(len(data)))
+            print("3: Current date:                         {}".format(data.datetime.datetime()))
+            print('4: Open:                                 {}'.format(data.open[0]))
+            print('5: High:                                 {}'.format(data.high[0]))
+            print('6: Low:                                  {}'.format(data.low[0]))
+            print('7: Close:                                {}'.format(data.close[0]))
+            print('8: Volume:                               {}'.format(data.volume[0]))
+            print('9: Position Size:                       {}'.format(self.position.size))
+            print('--------------------------------------------------------------------')
+ 
+    def notify_trade(self,trade):
+        if trade.isclosed:
+            dt = self.data.datetime.date()
+ 
+            # print('---------------------------- TRADE ---------------------------------')
+            # print("1: Data Name:                            {}".format(trade.data._name))
+            # print("2: Bar Num:                              {}".format(len(trade.data)))
+            # print("3: Current date:                         {}".format(dt))
+            # print('4: Status:                               Trade Complete')
+            # print('5: Ref:                                  {}'.format(trade.ref))
+            # print('6: PnL:                                  {}'.format(round(trade.pnl,2)))
+            # print('--------------------------------------------------------------------')
 
 class RSIStrategy(bt.Strategy):
     params = (
@@ -72,10 +150,11 @@ class RSIStrategy(bt.Strategy):
         self.buycomm = None
         self.amount = None
         # Add a MovingAverageSimple indicator
-        self.rsi = bt.talib.RSI(self.datas[0], timeperiod=self.params.maperiod)
+        # self.rsi = bt.talib.RSI(self.datas[0], timeperiod=self.params.maperiod)
+        self.rsi = bt.indicators.RelativeStrengthIndex()
         self.movav= bt.talib.MACD(self.datas[0], timeperiod=self.params.maperiod)
         self.order_stopLoss = None
-        self.macdabove = False
+        self.rsiDivergence = RSIDivergence(rsi_period=self.params.maperiod)
 
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
@@ -129,15 +208,13 @@ class RSIStrategy(bt.Strategy):
         # Check if we are in the market
         if not self.position:
             # Not yet ... we MIGHT BUY if ...
-            if self.rsi < min(self.params.limits) and self.macdabove == False and self.movav.lines.macd[0] > self.movav.lines.macdsignal[0]:
+            if self.rsi < min(self.params.limits):
                 # Keep track of the created order to avoid a 2nd order
                 self.amount = (self.broker.getvalue() * self.params.quantity) / self.dataclose[0]
                 self.order = self.buy(size=self.amount)
-                self.macdabove = True
         else:
             # Already in the market ... we might sell
-            if self.macdabove == True and self.rsi > max(self.params.limits):
-                self.macdabove = False
+            if self.rsi > max(self.params.limits):
                 # Keep track of the created order to avoid a 2nd order
                 self.order = self.sell(size=self.amount)
 # ______________________ End Strategy Class
@@ -201,7 +278,7 @@ def getWinLoss(analyzer):
 def getSQN(analyzer):
     return round(analyzer.sqn,2)
     
-def runbacktest(verbose, datapath, start, end, period, strategy, commission_val=None, portofolio=10000.0, stake_val=1, quantity=0.01, plt=False, limits=[30, 70], stopLoss=0.0,):
+def runbacktest(verbose, datapath, start, end, period, strategy, commission_val=None, portofolio=10000.0, stake_val=1, quantity=0.01, plt=True, limits=[30, 70], stopLoss=0.0,):
     # Create a cerebro entity
     cerebro = bt.Cerebro()
     # Add a FixedSize sizer according to the stake
@@ -211,11 +288,11 @@ def runbacktest(verbose, datapath, start, end, period, strategy, commission_val=
     if commission_val:
         cerebro.broker.setcommission(commission=commission_val/100) # divide by 100 to remove the %
     # Add a strategy
-    if strategy == 'SMA':
-        cerebro.addstrategy(SMAStrategy, maperiod=period, quantity=quantity)
-    elif strategy == 'RSI':
+    if strategy == 'RSI':
         # cerebro.optstrategy(RSIStrategy, maperiod=period, quantity=quantity)
         cerebro.addstrategy(RSIStrategy, verbose=verbose, maperiod=period, quantity=quantity, stopLoss=stopLoss, limits=limits)
+    elif strategy == 'BOLLStrat':
+        cerebro.addstrategy(BOLLStrat)
     else :
         print('no strategy')
         exit()
@@ -230,7 +307,6 @@ def runbacktest(verbose, datapath, start, end, period, strategy, commission_val=
         fromdate = datetime.strptime(start, '%Y-%m-%d'),
         todate = datetime.strptime(end, '%Y-%m-%d'),
         reverse = False)
-
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
     cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name="ta")
@@ -292,22 +368,25 @@ def run_strategy(strategy, datapath, start, end,  period, limits, stopLoss, verb
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     commission_val = 0.04 # 0.04% taker fees binance usdt futures
-    portofolio = 3000.0 # amount of money we start with
+    portofolio = 1000.0 # amount of money we start with
     stake_val = 1
-    quantity = 0.10 # percentage to buy based on the current portofolio amount
+    quantity = 0.01 # percentage to buy based on the current portofolio amount
     # here it would be a unit equivalent to 1000$ if the value of our portofolio didn't change
 
-    # periodRange = range(14, 30)
-    periodRange = range(10, 30)
+    periodRange = range(15, 16)
+    # periodRange = range(10, 30)
     # stopLossRange = [0, 0.001, 0.005, 0.01, -0.01]
     stopLossRange = [0]
-    limitsRange = [[70,30], [70,25], [60,25], [65,25], [70,20]]
-    # limitsRange = [[60,25]]
-    start = '2017-01-01'
+    # limitsRange = [[70,30], [70,25], [60,25], [65,25], [70,20]]
+    limitsRange = [[60,25], [65,25], [65,30], [70,25], [70,30], [75,30], [75,25], [80,25], [80,30], [80,35], [80,40]]
+    # limitsRange = [[65,25]]
+    start = '2020-01-01'
     end = '2022-01-29'
     # timeframe = '1d'
     # strategies = ['SMA', 'RSI']
     strategies = ['RSI']
+    # strategies = ['BOLLStrat']
+    # strategies = ['firstStrategy']
     plot = True
     # symbol = "BTCUSDT"
     import multiprocessing
